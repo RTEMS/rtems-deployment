@@ -1,0 +1,6 @@
+#
+# Project Tools and BSP
+#
+%define with_rtems_bsp     powerpc/mvme2307
+5/rtems-powerpc
+5/rtems-kernel

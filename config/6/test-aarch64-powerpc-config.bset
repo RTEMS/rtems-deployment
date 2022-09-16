@@ -1,0 +1,11 @@
+#
+# Build kernels for different architectures
+#
+
+%define mail_single_report 1
+
+%define with_rtems_bsp_config config/6/test-aarch64-powerpc.ini
+
+6/rtems-aarch64
+6/rtems-powerpc
+6/rtems-kernel

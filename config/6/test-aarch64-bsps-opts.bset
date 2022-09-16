@@ -1,0 +1,18 @@
+#
+# Gemini BSPs
+#
+# Build into the prefix path:
+#
+#  - PowerPC tools
+#  - RTEMS Kernel and BSP
+#
+
+%define mail_single_report 1
+
+%define with_rtems_bsp     aarch64/xilinx_versal_aiedge
+%define with_rtems_bspopts BSP_XILINX_VERSAL_NOCACHE_LENGTH=0x4000000 BSP_XILINX_VERSAL_RAM_LENGTH=0x200000000
+%define rtems_target       aarch64-rtems%{rtems_version}
+%define rtems_host         %{rtems_target}
+
+6/rtems-aarch64
+6/rtems-kernel

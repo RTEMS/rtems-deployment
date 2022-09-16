@@ -1,0 +1,9 @@
+#
+# Project Tools, BSP and LibBSD
+#
+%define with_rtems_bsp     aarch64/xilinx_versal_aiedge
+%define with_rtems_bspopts BSP_XILINX_VERSAL_NOCACHE_LENGTH=0x4000000 \
+                           BSP_XILINX_VERSAL_RAM_LENGTH=0x200000000
+6/rtems-aarch64
+6/rtems-kernel
+6/rtems-libbsd
