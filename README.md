@@ -1,7 +1,7 @@
 # RTEMS RSB Deployment Tests
 
-This project proivdes a holds buildset configuration scripts that test
-the RSB. It provides:
+This project provides buildset configuration scripts to test the
+RSB. It provides:
 
 1. Regression tests for the RSB
 
@@ -23,13 +23,15 @@ Deplopyment of tools, BSPs and libraries provides a stable common base
 for all uses in project. Stable and controlled delivery can be
 achieved when combined with a host's package management system.
 
+
 ## Requirements
 
 - Please follow the RTEMS User Guide's Quick Start and Host section to
   get a properly configured host that can build RTEMS tools.
 
-- A copy of the RSB in source. It can be a released tar file for the
+- A copy of the RSB in source. It can be a released tar file or a
   cloned git repo.
+
 
 ## Instructions
 
