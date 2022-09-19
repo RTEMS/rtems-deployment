@@ -32,7 +32,13 @@ This can be a template for using waf to run the RSB.
 
 from __future__ import print_function
 
+import errno
+import itertools
+import os
 import os.path
+import shutil
+
+out = 'out'
 
 rtems_version_default = 6
 
@@ -103,7 +109,7 @@ builds = {
     ],
 }
 
-from waflib import Context, Build, Errors, Task, TaskGen, Utils
+from waflib import Context, Build, Errors, Logs, Scripting, Task, TaskGen, Utils
 
 
 class set_builder_task(Task.Task):
@@ -119,16 +125,21 @@ class set_builder_task(Task.Task):
     def run(self):
         r = 0
         try:
-            self.generator.bld.cmd_and_log(self.rsb_cmd,
-                                           cwd=self.base,
-                                           quiet=Context.BOTH)
+            out, err = self.generator.bld.cmd_and_log(self.rsb_cmd,
+                                                      cwd=self.base,
+                                                      quiet=Context.BOTH)
         except Errors.WafError as e:
+            out = e.stdout
+            err = e.stderr
             r = 1
         if not self.good:
             if r == 0:
                 r = 1
             else:
                 r = 0
+        if r != 0:
+            self.generator.bld.to_log(err)
+            self.generator.bld.to_log('rsb cmd: ' + self.rsb_cmd + os.linesep)
         return r
 
 
@@ -144,17 +155,24 @@ def set_builder_generator(self):
 
 
 class shower(Build.BuildContext):
+    '''show the builds for a version of RTEMS'''
     cmd = 'show'
     fun = 'show'
 
 
-def set_builder_build(bld, build, show=False):
+class dry_runner(Build.BuildContext):
+    '''runs the build sets with --dry-run'''
+    cmd = 'dry-run'
+    fun = 'dry_run'
+
+
+def set_builder_build(bld, build, dry_run=False, show=False):
     name = os.path.basename(build['buildset'])
-    cmd = [
-        bld.env.RSB_SET_BUILDER, '--prefix=/private/prefix', '--no-install',
-        '--bset-tar-file'
-    ]
-    if build['dry-run'] or bld.env.DRY_RUN:
+    cmd = [bld.env.RSB_SET_BUILDER, '--prefix=' + bld.env.PREFIX]
+    if bld.env.NO_INSTALL:
+        cmd += ['--no-install']
+    cmd += ['--bset-tar-file']
+    if build['dry-run'] or dry_run:
         cmd += ['--dry-run']
     cmd += ['--trace', '--log=' + name + '.txt', build['buildset']]
     if show:
@@ -181,11 +199,15 @@ def options(opt):
                    default=rtems_version_default,
                    dest='rtems_version',
                    help='Version of RTEMS')
-    opt.add_option('--dry-run',
+    opt.add_option('--prefix',
+                   default='/opt/rtems/deploy',
+                   dest='prefix',
+                   help='RSB prefix path to install the packages too')
+    opt.add_option('--install',
                    action='store_true',
                    default=False,
-                   dest='dry_run',
-                   help='Dry run of the build commands')
+                   dest='install',
+                   help='RSB Install mode')
 
 
 def configure(conf):
@@ -193,12 +215,6 @@ def configure(conf):
         conf.fatal('RSB path not provided as configure option')
     if not os.path.exists(conf.options.rsb_path):
         conf.fatal('RSB path not found: ' + conf.options.rsb_path)
-    rsb_path = os.path.abspath(conf.options.rsb_path)
-    rsb_set_builder = os.path.join(rsb_path, 'source-builder',
-                                   'sb-set-builder')
-    if not os.path.exists(rsb_set_builder):
-        conf.fatal('RSB path not the valid: ' + rsb_path)
-    conf.msg('RSB', rsb_path, 'GREEN')
     try:
         rtems_version = int(conf.options.rtems_version)
     except:
@@ -206,15 +222,23 @@ def configure(conf):
     if rtems_version not in builds:
         conf.fatal('unsupported RTEMS version: ' + conf.options.rtems_version)
     conf.msg('RTEMS Version', rtems_version, 'GREEN')
-    if conf.options.dry_run:
-        dry_run = 'yes'
+    rsb_path = os.path.abspath(conf.options.rsb_path)
+    rsb_set_builder = os.path.join(rsb_path, 'source-builder',
+                                   'sb-set-builder')
+    if not os.path.exists(rsb_set_builder):
+        conf.fatal('RSB path not the valid: ' + rsb_path)
+    conf.msg('RSB', rsb_path, 'GREEN')
+    conf.msg('RSB Prefix', conf.options.prefix, 'GREEN')
+    if conf.options.install:
+        install = 'install'
     else:
-        dry_run = 'no'
-    conf.msg('Dry run', dry_run, 'GREEN')
+        install = 'no-install'
+    conf.msg('RSB Install mode', install, 'GREEN')
     conf.env.RSB_PATH = rsb_path
     conf.env.RSB_SET_BUILDER = rsb_set_builder
     conf.env.RTEMS_VERSION = rtems_version
-    conf.env.DRY_RUN = conf.options.dry_run
+    conf.env.PREFIX = conf.options.prefix
+    conf.env.NO_INSTALL = not conf.options.install
 
 
 def build(bld):
@@ -231,8 +255,36 @@ def build(bld):
     bld.add_group('tar')
     for build in tars:
         set_builder_build(bld, build)
+    bld.clean_files = \
+        itertools.chain(bld.bldnode.ant_glob('**',
+          excl='.lock* config.log c4che/* config.h',
+          quiet=True, generator=True),
+                        bld.path.ant_glob('tar/**', quiet=True, generator=True))
+
+
+def distclean(ctx):
+    '''removes build folders and data'''
+    def remove_and_log(k, fun):
+        try:
+            fun(k)
+        except EnvironmentError as e:
+            if e.errno != errno.ENOENT:
+                Logs.warn('Could not remove %r', k)
+
+    Scripting.distclean(ctx)
+    for d in ['build', 'tar']:
+        remove_and_log(d, shutil.rmtree)
+    for f in os.listdir('.'):
+        r, e = os.path.splitext(f)
+        if e == '.txt':
+            remove_and_log(f, os.remove)
 
 
 def show(bld):
     for build in builds[bld.env.RTEMS_VERSION]:
         set_builder_build(bld, build, show=True)
+
+
+def dry_run(bld):
+    for build in builds[bld.env.RTEMS_VERSION]:
+        set_builder_build(bld, build, dry_run=True)
