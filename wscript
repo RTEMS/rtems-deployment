@@ -38,79 +38,15 @@ import os
 import os.path
 import shutil
 
-out = 'out'
-
-rtems_version_default = 6
-
-builds = {
-    5: [
-        {
-            'buildset': '5/project-tools',
-            'good': True,
-            'dry-run': False
-        },
-        {
-            'buildset': '5/project-tools-bsp',
-            'good': True,
-            'dry-run': False
-        },
-    ],
-    6: [
-        {
-            'buildset': '6/test-aarch64-bsps-bad-opts',
-            'good': False,
-            'dry-run': True
-        },
-        {
-            'buildset': '6/test-aarch64-bsps',
-            'good': True,
-            'dry-run': True
-        },
-        {
-            'buildset': '6/test-aarch64-bsps-opts',
-            'good': True,
-            'dry-run': True
-        },
-        {
-            'buildset': '6/test-aarch64-config',
-            'good': True,
-            'dry-run': True
-        },
-        {
-            'buildset': '6/test-aarch64-powerpc-config',
-            'good': True,
-            'dry-run': True
-        },
-        {
-            'buildset': '6/project-tools',
-            'good': True,
-            'dry-run': False
-        },
-        {
-            'buildset': '6/project-tools-bsp',
-            'good': True,
-            'dry-run': False
-        },
-        {
-            'buildset': '6/project-tools-bsp-config',
-            'good': True,
-            'dry-run': False
-        },
-        {
-            'buildset': '6/project-aarch64-tools-bsp-libbsd',
-            'good': True,
-            'dry-run': False
-        },
-        {
-            'buildset': '6/project-aarch64-tools-bsp-libbsd-config',
-            'good': True,
-            'dry-run': False
-        },
-    ],
-}
+#
+# Provide a set of builds and the RTEMS version
+#
+import builds
 
 from waflib import Context, Build, Errors, Logs, Scripting, Task, TaskGen, Utils
 
+
+out = 'out'
 
 class set_builder_task(Task.Task):
     always_run = True
@@ -211,7 +147,7 @@ def options(opt):
                    dest='rsb_path',
                    help='Path to the RTEMS Source Builder (RSB)')
     opt.add_option('--rtems-version',
-                   default=rtems_version_default,
+                   default=builds.rtems_version_default,
                    dest='rtems_version',
                    help='Version of RTEMS')
     opt.add_option('--prefix',
@@ -234,7 +170,7 @@ def configure(conf):
         rtems_version = int(conf.options.rtems_version)
     except:
         conf.fatal('invalid RTEMS version: ' + conf.options.rtems_version)
-    if rtems_version not in builds:
+    if rtems_version not in builds.configs:
         conf.fatal('unsupported RTEMS version: ' + conf.options.rtems_version)
     conf.msg('RTEMS Version', rtems_version, 'GREEN')
     rsb_path = os.path.abspath(conf.options.rsb_path)
@@ -258,10 +194,10 @@ def configure(conf):
 
 def build(bld):
     dry_runs = [
-        build for build in builds[bld.env.RTEMS_VERSION] if build['dry-run']
+        build for build in builds.configs[bld.env.RTEMS_VERSION] if build['dry-run']
     ]
     tars = [
-        build for build in builds[bld.env.RTEMS_VERSION]
+        build for build in builds.configs[bld.env.RTEMS_VERSION]
         if not build['dry-run']
     ]
     for build in dry_runs:
@@ -294,10 +230,10 @@ def distclean(ctx):
 
 
 def show(bld):
-    for build in builds[bld.env.RTEMS_VERSION]:
+    for build in builds.configs[bld.env.RTEMS_VERSION]:
         set_builder_build(bld, build, show=True)
 
 
 def dry_run(bld):
-    for build in builds[bld.env.RTEMS_VERSION]:
+    for build in builds.configs[bld.env.RTEMS_VERSION]:
         set_builder_build(bld, build, dry_run=True)
