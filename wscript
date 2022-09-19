@@ -124,10 +124,12 @@ class set_builder_task(Task.Task):
 
     def run(self):
         r = 0
+        out = None
+        err = None
         try:
-            out, err = self.generator.bld.cmd_and_log(self.rsb_cmd,
-                                                      cwd=self.base,
-                                                      quiet=Context.BOTH)
+            self.generator.bld.cmd_and_log(self.rsb_cmd,
+                                           cwd=self.base,
+                                           quiet=Context.BOTH)
         except Errors.WafError as e:
             out = e.stdout
             err = e.stderr
@@ -138,15 +140,28 @@ class set_builder_task(Task.Task):
             else:
                 r = 0
         if r != 0:
-            self.generator.bld.to_log(err)
+            self.generator.bld.to_log(e.stderr)
             self.generator.bld.to_log('rsb cmd: ' + self.rsb_cmd + os.linesep)
         return r
+
+class set_builder_task_run(set_builder_task):
+    '''run the build, run after dry-run tasks so they checked first'''
+    ext_in = ['dry-run']
+
+
+class set_builder_task_dry_run(set_builder_task):
+    '''build is a dry run'''
+    ext_out = ['dry-run']
 
 
 @TaskGen.taskgen_method
 @TaskGen.feature('*')
 def set_builder_generator(self):
-    tsk = self.create_task('set_builder_task')
+    if getattr(self, 'dry_run', None):
+        task_type ='set_builder_task_dry_run'
+    else:
+        task_type ='set_builder_task_run'
+    tsk = self.create_task(task_type)
     tsk.name = getattr(self, 'name', None)
     tsk.base = getattr(self, 'base', None)
     tsk.config = getattr(self, 'config', None)
@@ -183,9 +198,9 @@ def set_builder_build(bld, build, dry_run=False, show=False):
         if buildset is None:
             bld.fatal('buildset not found: ' + build['buildset'])
         bld(name=build['buildset'],
-            soufrce=config,
             base=bld.path,
             good=build['good'],
+            dry_run=build['dry-run'] or dry_run,
             rsb_cmd=' '.join(cmd),
             always=True)
 
@@ -249,10 +264,8 @@ def build(bld):
         build for build in builds[bld.env.RTEMS_VERSION]
         if not build['dry-run']
     ]
-    bld.add_group('dry-run')
     for build in dry_runs:
         set_builder_build(bld, build)
-    bld.add_group('tar')
     for build in tars:
         set_builder_build(bld, build)
     bld.clean_files = \
