@@ -31,18 +31,7 @@ RSB Deployment Builds
 rtems_version_default = 6
 
 configs = {
-    5: [
-        {
-            'buildset': '5/project-tools',
-            'good': True,
-            'dry-run': False
-        },
-        {
-            'buildset': '5/project-tools-bsp',
-            'good': True,
-            'dry-run': False
-        },
-    ],
+    5: [],
     6: [
         {
             'buildset': '6/test-aarch64-bsps-bad-opts',
@@ -68,31 +57,6 @@ configs = {
             'buildset': '6/test-aarch64-powerpc-config',
             'good': True,
             'dry-run': True
-        },
-        {
-            'buildset': '6/project-tools',
-            'good': True,
-            'dry-run': False
-        },
-        {
-            'buildset': '6/project-tools-bsp',
-            'good': True,
-            'dry-run': False
-        },
-        {
-            'buildset': '6/project-tools-bsp-config',
-            'good': True,
-            'dry-run': False
-        },
-        {
-            'buildset': '6/project-aarch64-tools-bsp-libbsd',
-            'good': True,
-            'dry-run': False
-        },
-        {
-            'buildset': '6/project-aarch64-tools-bsp-libbsd-config',
-            'good': True,
-            'dry-run': False
         },
     ],
 }

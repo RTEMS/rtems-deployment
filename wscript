@@ -45,8 +45,8 @@ import builds
 
 from waflib import Context, Build, Errors, Logs, Scripting, Task, TaskGen, Utils
 
-
 out = 'out'
+
 
 class set_builder_task(Task.Task):
     always_run = True
@@ -76,9 +76,10 @@ class set_builder_task(Task.Task):
             else:
                 r = 0
         if r != 0:
-            self.generator.bld.to_log(e.stderr)
+            self.generator.bld.to_log(err)
             self.generator.bld.to_log('rsb cmd: ' + self.rsb_cmd + os.linesep)
         return r
+
 
 class set_builder_task_run(set_builder_task):
     '''run the build, run after dry-run tasks so they checked first'''
@@ -94,9 +95,9 @@ class set_builder_task_dry_run(set_builder_task):
 @TaskGen.feature('*')
 def set_builder_generator(self):
     if getattr(self, 'dry_run', None):
-        task_type ='set_builder_task_dry_run'
+        task_type = 'set_builder_task_dry_run'
     else:
-        task_type ='set_builder_task_run'
+        task_type = 'set_builder_task_run'
     tsk = self.create_task(task_type)
     tsk.name = getattr(self, 'name', None)
     tsk.base = getattr(self, 'base', None)
@@ -139,6 +140,24 @@ def set_builder_build(bld, build, dry_run=False, show=False):
             dry_run=build['dry-run'] or dry_run,
             rsb_cmd=' '.join(cmd),
             always=True)
+
+
+def find_buildsets(version):
+    path = os.path.join('config', str(version))
+    discovered = []
+    for root, dirs, files in os.walk(path):
+        base = root[len('config') + 1:]
+        for f in files:
+            r, e = os.path.splitext(f)
+            if e == '.bset':
+                discovered += [os.path.join(base, r)]
+    bs_default = [bs['buildset'] for bs in builds.configs[version]]
+    bs = builds.configs[version] + [{
+        'buildset': b,
+        'good': True,
+        'dry-run': False
+    } for b in discovered if b not in bs_default]
+    return sorted(bs, key=lambda bs: bs['buildset'])
 
 
 def options(opt):
@@ -194,10 +213,11 @@ def configure(conf):
 
 def build(bld):
     dry_runs = [
-        build for build in builds.configs[bld.env.RTEMS_VERSION] if build['dry-run']
+        build for build in find_buildsets(bld.env.RTEMS_VERSION)
+        if build['dry-run']
     ]
     tars = [
-        build for build in builds.configs[bld.env.RTEMS_VERSION]
+        build for build in find_buildsets(bld.env.RTEMS_VERSION)
         if not build['dry-run']
     ]
     for build in dry_runs:
@@ -230,10 +250,10 @@ def distclean(ctx):
 
 
 def show(bld):
-    for build in builds.configs[bld.env.RTEMS_VERSION]:
+    for build in find_buildsets(bld.env.RTEMS_VERSION):
         set_builder_build(bld, build, show=True)
 
 
 def dry_run(bld):
-    for build in builds.configs[bld.env.RTEMS_VERSION]:
+    for build in find_buildsets(bld.env.RTEMS_VERSION):
         set_builder_build(bld, build, dry_run=True)
