@@ -1,6 +1,8 @@
+out
 build
 patches
 sources
 tar
 *.txt
 .lock*
+__pycache__
