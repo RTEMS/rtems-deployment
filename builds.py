@@ -34,27 +34,27 @@ configs = {
     5: [],
     6: [
         {
-            'buildset': '6/test-aarch64-bsps-bad-opts',
+            'buildset': '6/test/aarch64-bsps-bad-opts',
             'good': False,
             'dry-run': True
         },
         {
-            'buildset': '6/test-aarch64-bsps',
+            'buildset': '6/test/aarch64-bsps',
             'good': True,
             'dry-run': True
         },
         {
-            'buildset': '6/test-aarch64-bsps-opts',
+            'buildset': '6/test/aarch64-bsps-opts',
             'good': True,
             'dry-run': True
         },
         {
-            'buildset': '6/test-aarch64-config',
+            'buildset': '6/test/aarch64-config',
             'good': True,
             'dry-run': True
         },
         {
-            'buildset': '6/test-aarch64-powerpc-config',
+            'buildset': '6/test/aarch64-powerpc-config',
             'good': True,
             'dry-run': True
         },
