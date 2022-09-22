@@ -120,13 +120,18 @@ class dry_runner(Build.BuildContext):
 
 def set_builder_build(bld, build, dry_run=False, show=False):
     name = os.path.basename(build['buildset'])
+    logs = bld.path.get_bld()
+    log = logs.make_node(name)
     cmd = [bld.env.RSB_SET_BUILDER, '--prefix=' + bld.env.PREFIX]
     if bld.env.NO_INSTALL:
         cmd += ['--no-install']
     cmd += ['--bset-tar-file']
     if build['dry-run'] or dry_run:
         cmd += ['--dry-run']
-    cmd += ['--trace', '--log=' + name + '.txt', build['buildset']]
+    cmd += [
+        '--trace', '--log=' + str(log.path_from(bld.path)) + '.txt',
+        build['buildset']
+    ]
     if show:
         print(build['buildset'] + ':', ' '.join(cmd))
     else:
@@ -233,6 +238,7 @@ def build(bld):
 
 def distclean(ctx):
     '''removes build folders and data'''
+
     def remove_and_log(k, fun):
         try:
             fun(k)
