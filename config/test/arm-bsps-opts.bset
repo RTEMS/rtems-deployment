@@ -1,0 +1,12 @@
+#
+# Test options
+#
+
+%define mail_single_report 1
+
+%define with_rtems_bsp     arm/xilinx_zynq_zc706
+%define with_rtems_smp     1
+%define with_rtems_bspopts ZYNQ_RAM_LENGTH=0x10000000 ZYNQ_CLOCK_CPU_1X=100000000 BSP_ARM_A9MPCORE_PERIPHCLK=375000000
+
+%{rtems_version}/rtems-arm
+%{rtems_version}/rtems-kernel

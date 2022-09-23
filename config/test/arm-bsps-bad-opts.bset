@@ -1,0 +1,11 @@
+#
+# This test fails with bad options
+#
+
+%define mail_single_report 1
+
+%define with_rtems_bsp     arm/xilinx_zynq_zedboard arm/xilinx_zynq_a9_qemu
+%define with_rtems_bspopts A=B C=d
+
+%{rtems_version}/rtems-arm
+%{rtems_version}/rtems-kernel

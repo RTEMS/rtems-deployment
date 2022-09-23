@@ -1,7 +1,0 @@
-#
-# Project Tools and BSPs
-#
-%define with_rtems_bsp_config config/6/project/aarch64-bsp.ini
-6/rtems-aarch64
-6/rtems-kernel
-6/rtems-libbsd

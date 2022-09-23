@@ -1,0 +1,6 @@
+#
+# Microchip PolarFire Icicle Kit
+#
+%define with_rtems_bsp_config config/microchip/polarfire-icicle-bsp-smp.ini
+%{rtems_version}/rtems-riscv
+%{rtems_version}/rtems-kernel

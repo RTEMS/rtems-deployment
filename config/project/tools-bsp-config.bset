@@ -1,0 +1,7 @@
+#
+# Deployment Example Project Tools and BSPs
+#
+%define with_rtems_bsp_config config/project/bsps.ini
+%{rtems_version}/rtems-aarch64
+%{rtems_version}/rtems-arm
+%{rtems_version}/rtems-kernel

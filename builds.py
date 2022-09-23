@@ -28,35 +28,30 @@ RSB Deployment Builds
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-rtems_version_default = 6
-
-configs = {
-    5: [],
-    6: [
-        {
-            'buildset': '6/test/aarch64-bsps-bad-opts',
-            'good': False,
-            'dry-run': True
-        },
-        {
-            'buildset': '6/test/aarch64-bsps',
-            'good': True,
-            'dry-run': True
-        },
-        {
-            'buildset': '6/test/aarch64-bsps-opts',
-            'good': True,
-            'dry-run': True
-        },
-        {
-            'buildset': '6/test/aarch64-config',
-            'good': True,
-            'dry-run': True
-        },
-        {
-            'buildset': '6/test/aarch64-powerpc-config',
-            'good': True,
-            'dry-run': True
-        },
-    ],
-}
+configs = [
+    {
+        'buildset': 'test/arm-bsps-bad-opts',
+        'good': False,
+        'dry-run': True
+    },
+    {
+        'buildset': 'test/sparc-bsps',
+        'good': True,
+        'dry-run': True
+    },
+    {
+        'buildset': 'test/arm-bsps-opts',
+        'good': True,
+        'dry-run': True
+    },
+    {
+        'buildset': 'test/aarch64-config',
+        'good': True,
+        'dry-run': True
+    },
+    {
+        'buildset': 'test/aarch64-powerpc-config',
+        'good': True,
+        'dry-run': True
+    },
+]

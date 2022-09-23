@@ -39,7 +39,7 @@ import os.path
 import shutil
 
 #
-# Provide a set of builds and the RTEMS version
+# Provide a set of builds with special settings
 #
 import builds
 
@@ -148,7 +148,7 @@ def set_builder_build(bld, build, dry_run=False, show=False):
 
 
 def find_buildsets(version):
-    path = os.path.join('config', str(version))
+    path = 'config'
     discovered = []
     for root, dirs, files in os.walk(path):
         base = root[len('config') + 1:]
@@ -156,8 +156,8 @@ def find_buildsets(version):
             r, e = os.path.splitext(f)
             if e == '.bset':
                 discovered += [os.path.join(base, r)]
-    bs_default = [bs['buildset'] for bs in builds.configs[version]]
-    bs = builds.configs[version] + [{
+    bs_default = [bs['buildset'] for bs in builds.configs]
+    bs = builds.configs + [{
         'buildset': b,
         'good': True,
         'dry-run': False
@@ -170,10 +170,6 @@ def options(opt):
                    default=None,
                    dest='rsb_path',
                    help='Path to the RTEMS Source Builder (RSB)')
-    opt.add_option('--rtems-version',
-                   default=builds.rtems_version_default,
-                   dest='rtems_version',
-                   help='Version of RTEMS')
     opt.add_option('--prefix',
                    default='/opt/rtems/deploy',
                    dest='prefix',
@@ -190,13 +186,6 @@ def configure(conf):
         conf.fatal('RSB path not provided as configure option')
     if not os.path.exists(conf.options.rsb_path):
         conf.fatal('RSB path not found: ' + conf.options.rsb_path)
-    try:
-        rtems_version = int(conf.options.rtems_version)
-    except:
-        conf.fatal('invalid RTEMS version: ' + conf.options.rtems_version)
-    if rtems_version not in builds.configs:
-        conf.fatal('unsupported RTEMS version: ' + conf.options.rtems_version)
-    conf.msg('RTEMS Version', rtems_version, 'GREEN')
     rsb_path = os.path.abspath(conf.options.rsb_path)
     rsb_set_builder = os.path.join(rsb_path, 'source-builder',
                                    'sb-set-builder')
@@ -211,7 +200,6 @@ def configure(conf):
     conf.msg('RSB Install mode', install, 'GREEN')
     conf.env.RSB_PATH = rsb_path
     conf.env.RSB_SET_BUILDER = rsb_set_builder
-    conf.env.RTEMS_VERSION = rtems_version
     conf.env.PREFIX = conf.options.prefix
     conf.env.NO_INSTALL = not conf.options.install
 

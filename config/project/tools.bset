@@ -1,0 +1,4 @@
+#
+# Deployment Example Project Tools
+#
+%{rtems_version}/rtems-aarch64
