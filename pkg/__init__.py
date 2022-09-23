@@ -1,7 +1,7 @@
 # SPDX-License-Identifier: BSD-2-Clause
-"""
-RSB Deployment Builds
-"""
+'''
+ Packaging Support
+'''
 
 #
 # Copyright 2022 Chris Johns (chris@contemporary.software)
@@ -28,30 +28,52 @@ RSB Deployment Builds
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
-configs = [
-    {
-        'buildset': 'test/arm-bsps-bad-opts',
-        'good': False,
-        'dry-run': True
-    },
-    {
-        'buildset': 'test/sparc-bsps',
-        'good': True,
-        'dry-run': True
-    },
-    {
-        'buildset': 'test/arm-bsps-opts',
-        'good': True,
-        'dry-run': True
-    },
-    {
-        'buildset': 'test/aarch64-config',
-        'good': True,
-        'dry-run': True
-    },
-    {
-        'buildset': 'test/aarch64-powerpc-config',
-        'good': True,
-        'dry-run': True
-    },
-]
+import os
+
+import pkg.configs
+
+packager = None
+if os.name == 'posix':
+    system = os.uname()[0]
+    if system == 'FreeBSD':
+        import pkg.freebsd as packager
+    elif system == 'Linux':
+        import pkg.linux as packager
+
+
+def init(ctx):
+    pkg.configs.init(ctx)
+    packager.init(ctx)
+
+
+def options(opt):
+    if packager is not None:
+        opt.add_option('--package',
+                       action='store_true',
+                       default=False,
+                       dest='package',
+                       help='Package build if supported and set up')
+        pkg.configs.options(opt)
+        packager.options(opt)
+
+
+def configure(conf):
+    pkg.configs.configure(conf)
+    conf.env.PACKAGER = False
+    if packager is not None:
+        packager.configure(conf)
+    package_build = 'no'
+    if conf.options.package:
+        if not conf.env.PACKAGER:
+            conf.fatal(
+                'Platform packager not supported or installed,' + \
+                ' please fix to package build'
+            )
+        package_build = 'yes'
+        conf.env.PACKAGE = True
+    conf.msg('Package build', package_build)
+
+
+def build(bld, build, bset, dry_run):
+    if packager is not None:
+        packager.build(bld, build, bset, dry_run)

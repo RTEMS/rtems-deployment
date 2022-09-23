@@ -1,0 +1,98 @@
+# SPDX-License-Identifier: BSD-2-Clause
+
+#
+# RTEMS Deloyment RPM spec file template
+#
+
+#
+# Copyright 2022 Chris Johns (chris@contemporary.software)
+#
+# Redistribution and use in source and binary forms, with or without
+# modification, are permitted provided that the following conditions
+# are met:
+# 1. Redistributions of source code must retain the above copyright
+#    notice, this list of conditions and the following disclaimer.
+# 2. Redistributions in binary form must reproduce the above copyright
+#    notice, this list of conditions and the following disclaimer in the
+#    documentation and/or other materials provided with the distribution.
+#
+# THIS SOFTWARE IS PROVIDED BY THE COPYRIGHT HOLDERS AND CONTRIBUTORS "AS IS"
+# AND ANY EXPRESS OR IMPLIED WARRANTIES, INCLUDING, BUT NOT LIMITED TO, THE
+# IMPLIED WARRANTIES OF MERCHANTABILITY AND FITNESS FOR A PARTICULAR PURPOSE
+# ARE DISCLAIMED. IN NO EVENT SHALL THE COPYRIGHT OWNER OR CONTRIBUTORS BE
+# LIABLE FOR ANY DIRECT, INDIRECT, INCIDENTAL, SPECIAL, EXEMPLARY, OR
+# CONSEQUENTIAL DAMAGES (INCLUDING, BUT NOT LIMITED TO, PROCUREMENT OF
+# SUBSTITUTE GOODS OR SERVICES; LOSS OF USE, DATA, OR PROFITS; OR BUSINESS
+# INTERRUPTION) HOWEVER CAUSED AND ON ANY THEORY OF LIABILITY, WHETHER IN
+# CONTRACT, STRICT LIABILITY, OR TORT (INCLUDING NEGLIGENCE OR OTHERWISE)
+# ARISING IN ANY WAY OUT OF THE USE OF THIS SOFTWARE, EVEN IF ADVISED OF THE
+# POSSIBILITY OF SUCH DAMAGE.
+#
+
+%global _enable_debug_package 0
+%global debug_package %{nil}
+%global __os_install_post /usr/lib/rpm/brp-ldconfig %{nil}
+%global __os_install_post /usr/lib/rpm/brp-compress %{nil}
+
+
+# Build subst, collect here
+%define rsb_buildroot        @RSB_BUILDROOT@
+%define rsb_version          @RSB_VERSION@
+%define rsb_revision         @RSB_REVISION@
+%define rsb_pkg_name         @RSB_PKG_NAME@
+%define rsb_prefix           @PREFIX@
+%define rsb_tarfile          @TARFILE@
+%define rsb_set_builder      @RSB_SET_BUILDER@
+%define rsb_set_builder_args @RSB_SET_BUILDER_ARGS@
+%define rsb_work_path        @RSB_WORK_PATH@
+
+
+# Use a buildroot under this repo build path
+%define _topdir %{rsb_buildroot}
+
+
+# Package
+%define name rtems-%{rsb_pkg_name}
+%define arch noarch
+
+
+# Package details
+Name: %{name}
+Version: %{rsb_version}
+Release: %{rsb_revision}%{?dist}
+Summary: RTEMS tools and board support package
+License: GPLv2, GPLv3, BSD-2
+
+
+%description
+This RPM is development tools and BSP for RTEMS
+
+
+%prep
+# We have no source because configure options supplied the path
+
+
+%build
+# The RSB deployment build command
+cd %{rsb_work_path}
+%{rsb_set_builder} %{rsb_set_builder_args}
+
+%install
+if test  -d %{buildroot}; then
+    rm -rf %{buildroot}
+fi
+mkdir -p %{buildroot}
+tar jxf %{rsb_tarfile} -C %{buildroot}
+
+
+%clean
+rm -rf %{buildroot}
+
+
+%files
+%defattr(-,root,root)
+%dir %{rsb_prefix}
+%{rsb_prefix}/*
+
+
+%changelog

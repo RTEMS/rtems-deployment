@@ -36,12 +36,14 @@ import errno
 import itertools
 import os
 import os.path
+import re
 import shutil
+import sys
 
 #
 # Provide a set of builds with special settings
 #
-import builds
+import pkg
 
 from waflib import Context, Build, Errors, Logs, Scripting, Task, TaskGen, Utils
 
@@ -84,6 +86,7 @@ class set_builder_task(Task.Task):
 class set_builder_task_run(set_builder_task):
     '''run the build, run after dry-run tasks so they checked first'''
     ext_in = ['dry-run']
+    ext_out = ['tarfile']
 
 
 class set_builder_task_dry_run(set_builder_task):
@@ -92,7 +95,7 @@ class set_builder_task_dry_run(set_builder_task):
 
 
 @TaskGen.taskgen_method
-@TaskGen.feature('*')
+@TaskGen.feature('setbuilder')
 def set_builder_generator(self):
     if getattr(self, 'dry_run', None):
         task_type = 'set_builder_task_dry_run'
@@ -106,12 +109,14 @@ def set_builder_generator(self):
     tsk.rsb_cmd = getattr(self, 'rsb_cmd', None)
 
 
+@TaskGen.feature('setbuilder')
 class shower(Build.BuildContext):
     '''show the builds for a version of RTEMS'''
     cmd = 'show'
     fun = 'show'
 
 
+@TaskGen.feature('setbuilder')
 class dry_runner(Build.BuildContext):
     '''runs the build sets with --dry-run'''
     cmd = 'dry-run'
@@ -119,50 +124,24 @@ class dry_runner(Build.BuildContext):
 
 
 def set_builder_build(bld, build, dry_run=False, show=False):
-    name = os.path.basename(build['buildset'])
-    logs = bld.path.get_bld()
-    log = logs.make_node(name)
-    cmd = [bld.env.RSB_SET_BUILDER, '--prefix=' + bld.env.PREFIX]
-    if bld.env.NO_INSTALL:
-        cmd += ['--no-install']
-    cmd += ['--bset-tar-file']
-    if build['dry-run'] or dry_run:
-        cmd += ['--dry-run']
-    cmd += [
-        '--trace', '--log=' + str(log.path_from(bld.path)) + '.txt',
-        build['buildset']
-    ]
+    bset = pkg.configs.buildset(bld, build, dry_run)
+    run_cmd = [bset['cmd']] + bset['run-opts']
     if show:
-        print(build['buildset'] + ':', ' '.join(cmd))
+        print(build['buildset'] + ':', ' '.join(bset['run_cmd']))
     else:
-        config = 'config/' + build['buildset'] + '.bset'
-        buildset = bld.path.find_resource(config)
-        if buildset is None:
-            bld.fatal('buildset not found: ' + build['buildset'])
         bld(name=build['buildset'],
+            description='Build tar file',
+            features='setbuilder',
+            target=bset['tar'],
             base=bld.path,
             good=build['good'],
-            dry_run=build['dry-run'] or dry_run,
-            rsb_cmd=' '.join(cmd),
+            dry_run=bset['dry-run'],
+            rsb_cmd=' '.join(run_cmd),
             always=True)
 
 
-def find_buildsets(version):
-    path = 'config'
-    discovered = []
-    for root, dirs, files in os.walk(path):
-        base = root[len('config') + 1:]
-        for f in files:
-            r, e = os.path.splitext(f)
-            if e == '.bset':
-                discovered += [os.path.join(base, r)]
-    bs_default = [bs['buildset'] for bs in builds.configs]
-    bs = builds.configs + [{
-        'buildset': b,
-        'good': True,
-        'dry-run': False
-    } for b in discovered if b not in bs_default]
-    return sorted(bs, key=lambda bs: bs['buildset'])
+def init(ctx):
+    pkg.init(ctx)
 
 
 def options(opt):
@@ -179,6 +158,8 @@ def options(opt):
                    default=False,
                    dest='install',
                    help='RSB Install mode')
+    pkg.options(opt)
+    pkg.configs.options(opt)
 
 
 def configure(conf):
@@ -191,28 +172,50 @@ def configure(conf):
                                    'sb-set-builder')
     if not os.path.exists(rsb_set_builder):
         conf.fatal('RSB path not the valid: ' + rsb_path)
-    conf.msg('RSB', rsb_path, 'GREEN')
-    conf.msg('RSB Prefix', conf.options.prefix, 'GREEN')
+    conf.msg('RSB', rsb_path, color='GREEN')
+    # Get the version details from the RSB
+    sys_path = sys.path
+    try:
+        sys.path = [os.path.join(rsb_path, 'source-builder', 'sb')] + sys.path
+        import version as rsb
+        rsb_version = rsb.version()
+        rsb_revision = rsb.revision()
+        rsb_released = rsb.released()
+    except:
+        raise
+        conf.fatal('cannot get the RSB version information')
+    finally:
+        sys.path = sys_path
+    conf.msg('RSB Version', rsb_version, color='GREEN')
+    if 'modified' in rsb_revision:
+        col = 'YELLOW'
+    else:
+        col = 'GREEN'
+    conf.msg('RSB Revision', rsb_revision, color=col)
+    if rsb_released:
+        conf.msg('RSB Released', 'yes', color='GREEN')
+    else:
+        conf.msg('RSB Released', 'no', color='YELLOW')
+    conf.msg('RSB Prefix', conf.options.prefix, color='GREEN')
     if conf.options.install:
         install = 'install'
     else:
         install = 'no-install'
-    conf.msg('RSB Install mode', install, 'GREEN')
+    conf.msg('RSB Install mode', install, color='GREEN')
     conf.env.RSB_PATH = rsb_path
     conf.env.RSB_SET_BUILDER = rsb_set_builder
+    conf.env.RSB_VERSION = rsb_version
+    conf.env.RSB_REVISION = rsb_revision
+    conf.env.RSB_RELEASED = rsb_released
     conf.env.PREFIX = conf.options.prefix
     conf.env.NO_INSTALL = not conf.options.install
+    pkg.configure(conf)
 
 
 def build(bld):
-    dry_runs = [
-        build for build in find_buildsets(bld.env.RTEMS_VERSION)
-        if build['dry-run']
-    ]
-    tars = [
-        build for build in find_buildsets(bld.env.RTEMS_VERSION)
-        if not build['dry-run']
-    ]
+    builds = pkg.configs.find_buildsets(bld)
+    dry_runs = [build for build in builds if build['dry-run']]
+    tars = [build for build in builds if not build['dry-run']]
     for build in dry_runs:
         set_builder_build(bld, build)
     for build in tars:
@@ -244,10 +247,10 @@ def distclean(ctx):
 
 
 def show(bld):
-    for build in find_buildsets(bld.env.RTEMS_VERSION):
+    for build in pkg.configs.find_buildsets(bld):
         set_builder_build(bld, build, show=True)
 
 
 def dry_run(bld):
-    for build in find_buildsets(bld.env.RTEMS_VERSION):
+    for build in pkg.configs.find_buildsets(bld):
         set_builder_build(bld, build, dry_run=True)
