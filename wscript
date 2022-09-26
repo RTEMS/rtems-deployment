@@ -213,6 +213,9 @@ def configure(conf):
 
 
 def build(bld):
+    if bld.cmd == 'install':
+        print('Nothing to install')
+        return
     builds = pkg.configs.find_buildsets(bld)
     dry_runs = [build for build in builds if build['dry-run']]
     tars = [build for build in builds if not build['dry-run']]
