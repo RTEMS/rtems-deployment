@@ -48,11 +48,6 @@ def init(ctx):
 
 def options(opt):
     if packager is not None:
-        opt.add_option('--package',
-                       action='store_true',
-                       default=False,
-                       dest='package',
-                       help='Package build if supported and set up')
         pkg.configs.options(opt)
         packager.options(opt)
 
@@ -62,16 +57,11 @@ def configure(conf):
     conf.env.PACKAGER = False
     if packager is not None:
         packager.configure(conf)
-    package_build = 'no'
-    if conf.options.package:
-        if not conf.env.PACKAGER:
-            conf.fatal(
-                'Platform packager not supported or installed,' + \
-                ' please fix to package build'
-            )
-        package_build = 'yes'
-        conf.env.PACKAGE = True
-    conf.msg('Package build', package_build)
+    if conf.env.PACKAGER:
+        p = 'yes'
+    else:
+        p = 'no'
+    conf.msg('Packaging', p)
 
 
 def build(bld, build, bset, dry_run):
