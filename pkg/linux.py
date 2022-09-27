@@ -52,50 +52,39 @@ def _esc_label(s):
     return s.replace('-', '_')
 
 
-def _esc_path(s):
-    if type(s) != str:
-        s = str(s)
-    return s.replace('/', '\/')
-
-
 def rpm_configure(conf):
     try:
         conf.find_program('rpmbuild', var='RPMBUILD', manditory=False)
         conf.env.PACKAGER = True
     except:
         pass
-    conf.find_program('sed', var='SED')
 
 
 def rpm_build(bld, build):
     bset = pkg.configs.buildset(bld, build, dry_run=False)
+    rpm_name = 'rpmspec/' + bset['name']
     spec_file = _esc_name(build['buildset'])
     spec = bld.path.get_bld().find_or_declare(spec_file + '.spec')
     buildroot = bld.path.get_bld().find_or_declare('buildroot')
-    sed = bld.env.SED[0] + ' '
-    sed += "-e 's/@RSB_BUILDROOT@/%s/' " % (_esc_path(buildroot))
-    sed += "-e 's/@RSB_PKG_NAME@/%s/' " % (_esc_path(bset['name']))
-    sed += "-e 's/@PREFIX@/%s/' " % (_esc_path(bld.env.PREFIX))
-    sed += "-e 's/@RSB_VERSION@/%s/' " % (bld.env.RSB_VERSION)
-    sed += "-e 's/@RSB_REVISION@/%s/' " % (_esc_label(bld.env.RSB_REVISION))
     if bld.env.RSB_RELEASED:
         rel = 'released'
     else:
         rel = 'not-released'
-    sed += "-e 's/@RSB_RELEASED@/%s/' " % (rel)
-    sed += "-e 's/@TARFILE@/%s/' " % (_esc_path(bset['tar']))
-    sed += "-e 's/@RSB_SET_BUILDER@/%s/' " % (_esc_path(bset['cmd']))
-    sed += "-e 's/@RSB_SET_BUILDER_ARGS@/%s/' " % (_esc_path(' '.join(
-        bset['pkg-opts'])))
-    sed += "-e 's/@RSB_WORK_PATH@/%s/' " % (_esc_path(bld.path))
-    sed += "-e 's/@RSB_WORK_PATH@/%s/' " % (_esc_path(bld.path))
-    rpm_name = 'rpmspec/' + bset['name']
     bld(name=rpm_name,
-        features='rpmspec',
+        features='subst',
         description='Generate RPM spec file',
         target=spec,
-        source=['pkg/rpm.spec.in', bset['config']],
-        rule=sed + ' < ${SRC[0]} > ${TGT}')
+        source='pkg/rpm.spec.in',
+        RSB_BUILDROOT=buildroot,
+        RSB_PKG_NAME=bset['name'],
+        PREFIX=bld.env.PREFIX,
+        RSB_VERSION=bld.env.RSB_VERSION,
+        RSB_REVISION=_esc_label(bld.env.RSB_REVISION),
+        RSB_RELEASED=rel,
+        TARFILE=bset['tar'],
+        RSB_SET_BUILDER=bset['cmd'],
+        RSB_SET_BUILDER_ARGS=' '.join(bset['pkg-opts']),
+        RSB_WORK_PATH=bld.path)
 
 
 def rpmspec(bld):
