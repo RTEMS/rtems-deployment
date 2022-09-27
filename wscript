@@ -123,6 +123,13 @@ class dry_runner(Build.BuildContext):
     fun = 'dry_run'
 
 
+@TaskGen.feature('html')
+class docs_builder(Build.BuildContext):
+    '''build the documentation as html'''
+    cmd = 'docs'
+    fun = 'docs'
+
+
 def set_builder_build(bld, build, dry_run=False, show=False):
     bset = pkg.configs.buildset(bld, build, dry_run)
     run_cmd = [bset['cmd']] + bset['run-opts']
@@ -202,6 +209,7 @@ def configure(conf):
     else:
         install = 'no-install'
     conf.msg('RSB Install mode', install, color='GREEN')
+    conf.find_program('pandoc', var='PANDOC', manditory=False)
     conf.env.RSB_PATH = rsb_path
     conf.env.RSB_SET_BUILDER = rsb_set_builder
     conf.env.RSB_VERSION = rsb_version
@@ -257,3 +265,25 @@ def show(bld):
 def dry_run(bld):
     for build in pkg.configs.find_buildsets(bld):
         set_builder_build(bld, build, dry_run=True)
+
+
+def docs(bld):
+    if not bld.env.PANDOC:
+        bld.fatal('no pandoc found during configure')
+    bld(name='css',
+        features='subst',
+        source='doc/rtems.css',
+        target='rtems.css',
+        is_copy=True)
+    title = 'RTEMS Deployment'
+    pandoc_std_opts = [
+        '-f markdown_phpextra+grid_tables+multiline_tables+simple_tables+auto_identifiers',
+        '--section-divs', '--toc',
+        '-M title="%s"' % (title), '-t html', '--include-in-header=rtems.css'
+    ]
+    bld(name='html',
+        source='README.md',
+        target='README.html',
+        rule=bld.env.PANDOC[0] + ' ${SRC} ' + ' '.join(pandoc_std_opts) +
+        ' > ${TGT}',
+        use='css')
