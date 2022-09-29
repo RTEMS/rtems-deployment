@@ -1,5 +1,5 @@
 #
-# Gemini MVME2307, Beaknil, MVME3100
+# Gemini MVME2307, Beaknik, MVME3100
 #
 %define with_rtems_bsp powerpc/mvme2307 powerpc/beatnik powerpc/mvme3100
 %define with_rtems_legacy_network
