@@ -1,0 +1,6 @@
+#
+# Gemini Beaknik
+#
+%define with_rtems_bsp powerpc/beatnik
+%{rtems_version}/rtems-kernel
+%{rtems_version}/rtems-libbsd
