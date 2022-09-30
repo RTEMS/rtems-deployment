@@ -134,7 +134,7 @@ def set_builder_build(bld, build, dry_run=False, show=False):
     bset = pkg.configs.buildset(bld, build, dry_run)
     run_cmd = [bset['cmd']] + bset['run-opts']
     if show:
-        print(build['buildset'] + ':', ' '.join(bset['run_cmd']))
+        print(build['buildset'] + ':', ' '.join(run_cmd))
     else:
         bld(name=build['buildset'],
             description='Build tar file',
