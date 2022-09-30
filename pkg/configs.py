@@ -112,7 +112,7 @@ def find_buildsets(bld):
         'good': True,
         'dry-run': False
     } for b in discovered if b not in bs_default]
-    if bld.env.BUILD_FILTER is not None:
+    if len(bld.env.BUILD_FILTER) > 0:
         bf = re.compile(bld.env.BUILD_FILTER)
         bs = [b for b in bs if bf.match(b['buildset'])]
     return sorted(bs, key=lambda bs: bs['buildset'])
