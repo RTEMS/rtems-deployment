@@ -183,8 +183,16 @@ def configure(conf):
     # Get the version details from the RSB
     sys_path = sys.path
     try:
-        sys.path = [os.path.join(rsb_path, 'source-builder', 'sb')] + sys.path
-        import version as rsb
+        rsb = None
+        try:
+            sys.path = [os.path.join(rsb_path, 'source-builder')] + sys.path
+            import sb.version as rsb
+        except:
+            sys.path = [os.path.join(rsb_path, 'source-builder', 'sb')] + sys.path
+            import version as rsb
+        if rsb is None:
+            conf.fatal('cannot import RSB version')
+        rsb.set_top(rsb_path)
         rsb_version = rsb.version()
         rsb_revision = rsb.revision()
         rsb_released = rsb.released()
