@@ -36,34 +36,6 @@ from waflib import Context
 
 path = 'config'
 
-configs = [
-    {
-        'buildset': 'test/arm-bsps-bad-opts',
-        'good': False,
-        'dry-run': True
-    },
-    {
-        'buildset': 'test/sparc-bsps',
-        'good': True,
-        'dry-run': True
-    },
-    {
-        'buildset': 'test/arm-bsps-opts',
-        'good': True,
-        'dry-run': True
-    },
-    {
-        'buildset': 'test/aarch64-config',
-        'good': True,
-        'dry-run': True
-    },
-    {
-        'buildset': 'test/aarch64-powerpc-config',
-        'good': True,
-        'dry-run': True
-    },
-]
-
 
 def init(ctx):
     pass
@@ -91,6 +63,14 @@ def configure(conf):
     conf.msg('Buildset filter', bf, color='GREEN')
 
 
+def config_path(config):
+    return os.path.join(path, config + '.bset')
+
+
+def config_dir(config):
+    return os.path.dirname(config_path(config))
+
+
 def add_wscript_fun(ctx, fun_name, fun_func):
     node = ctx.path.find_node(Context.WSCRIPT_FILE)
     if node:
@@ -98,31 +78,72 @@ def add_wscript_fun(ctx, fun_name, fun_func):
         setattr(wscript_module, fun_name, fun_func)
 
 
+def configs_ini_load(bld, inis, configs):
+
+    def get_parser():
+        try:
+            import configparser
+            config = configparser.ConfigParser(strict=False)
+        except:
+            # python2
+            import ConfigParser as configparser
+            config = configparser.ConfigParser()
+        return config
+
+    def parse_types(value):
+        v = value.lower()
+        if v == 'true':
+            return True
+        if v == 'false':
+            return False
+        return value
+
+    for ini in inis:
+        config = get_parser()
+        config.read(ini)
+        ini_dir = os.path.dirname(os.path.abspath(ini))
+        for d in config.defaults():
+            dft = parse_types(config.defaults()[d])
+            for c in configs:
+                if ini_dir == os.path.abspath(config_dir(c['buildset'])):
+                    c[d] = dft
+        for section in config.sections():
+            for c in configs:
+                if section == os.path.basename(c['buildset']):
+                    for i in config.items(section):
+                        c[i[0]] = parse_types(i[1])
+
+
 def find_buildsets(bld):
     discovered = []
+    inis = []
     for root, dirs, files in os.walk(path):
         base = root[len('config') + 1:]
         for f in files:
             r, e = os.path.splitext(f)
             if e == '.bset':
                 discovered += [os.path.join(base, r)]
-    bs_default = [bs['buildset'] for bs in configs]
-    bs = configs + [{
+            elif f == 'configs.ini':
+                inis += [os.path.join(root, f)]
+    bs = [{
         'buildset': b,
+        'enabled': True,
         'good': True,
         'dry-run': False
-    } for b in discovered if b not in bs_default]
+    } for b in discovered]
     if len(bld.env.BUILD_FILTER) > 0:
         bf = re.compile(bld.env.BUILD_FILTER)
         bs = [b for b in bs if bf.match(b['buildset'])]
-    return sorted(bs, key=lambda bs: bs['buildset'])
+    configs_ini_load(bld, inis, bs)
+    return sorted([b for b in bs if b['enabled']],
+                  key=lambda bs: bs['buildset'])
 
 
 def buildset(bld, build, dry_run):
     name = os.path.basename(build['buildset'])
     logs = bld.path.get_bld()
     log = logs.make_node(name)
-    config = 'config/' + build['buildset'] + '.bset'
+    config = config_path(build['buildset'])
     bset = bld.path.find_resource(config)
     if buildset is None:
         bld.fatal('buildset not found: ' + build['buildset'])
