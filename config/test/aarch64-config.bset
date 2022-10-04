@@ -9,7 +9,7 @@
 
 %define mail_single_report 1
 
-%define with_rtems_bsp_config config/6/test/bsps.ini
+%define with_rtems_bsp_config config/test/bsps.ini
 %define rtems_target          aarch64-rtems%{rtems_version}
 %define rtems_host            %{rtems_target}
 

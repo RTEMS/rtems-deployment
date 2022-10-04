@@ -5,4 +5,4 @@
 %define with_rtems_bsp sparc/erc32 sparc/leon3
 
 %{rtems_version}/rtems-sparc
-%{rtems_target}/rtems-kernel
+%{rtems_version}/rtems-kernel
