@@ -90,28 +90,63 @@ def configs_ini_load(bld, inis, configs):
             config = configparser.ConfigParser()
         return config
 
-    def parse_types(value):
-        v = value.lower()
-        if v == 'true':
-            return True
-        if v == 'false':
-            return False
-        return value
+    def parse_types(bld, value):
+        vs = value.lower().strip().split(' ')
+        if len(vs) == 1:
+            if vs[0] == 'true':
+                return True
+            if vs[0] == 'false':
+                return False
+            return None
+        if vs[0] == 'version':
+            if len(vs) != 3:
+                return None
+            try:
+                rev = int(bld.env.RSB_VERSION)
+            except:
+                bld.fatal('cannot convert RSB version to a number: ' +
+                          bld.env.RSB_VERSION)
+            try:
+                val = int(vs[2])
+            except:
+                return None
+            if vs[1] == '==':
+                return rev == val
+            if vs[1] == '!=':
+                return rev != val
+            if vs[1] == '>':
+                return rev > val
+            if vs[1] == '<':
+                return rev < val
+            if vs[1] == '>=':
+                return rev >= val
+            if vs[1] == '<=':
+                return rev <= val
+            return None
+        return None
 
     for ini in inis:
         config = get_parser()
         config.read(ini)
         ini_dir = os.path.dirname(os.path.abspath(ini))
         for d in config.defaults():
-            dft = parse_types(config.defaults()[d])
+            i = (d, config.defaults()[d])
+            val = parse_types(bld, i[1])
+            if val is None:
+                bld.fatal('invalid configs item in ' + ini + ': defaults: ' +
+                          i[0] + ' = ' + i[1])
             for c in configs:
                 if ini_dir == os.path.abspath(config_dir(c['buildset'])):
-                    c[d] = dft
+                    c[d] = val
         for section in config.sections():
             for c in configs:
                 if section == os.path.basename(c['buildset']):
                     for i in config.items(section):
-                        c[i[0]] = parse_types(i[1])
+                        val = parse_types(bld, i[1])
+                        if val is None:
+                            bld.fatal('invalid configs item in ' + ini + ': ' +
+                                      section + ': ' + i[0] + ' = ' + i[1])
+                        c[i[0]] = val
 
 
 def find_buildsets(bld):
@@ -141,8 +176,7 @@ def find_buildsets(bld):
 
 def buildset(bld, build, dry_run):
     name = os.path.basename(build['buildset'])
-    logs = bld.path.get_bld()
-    log = logs.make_node(name)
+    log = bld.path.get_bld().find_or_declare(build['buildset'] + '.txt')
     config = config_path(build['buildset'])
     bset = bld.path.find_resource(config)
     if buildset is None:
@@ -152,7 +186,7 @@ def buildset(bld, build, dry_run):
     cmd = bld.env.RSB_SET_BUILDER
     opts = [
         '--prefix=' + bld.env.PREFIX, '--bset-tar-file', '--trace',
-        '--log=' + str(log.path_from(bld.path)) + '.txt'
+        '--log=' + str(log.path_from(bld.path))
     ]
     opts_extra = []
     if bld.env.NO_INSTALL:
