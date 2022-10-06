@@ -46,26 +46,48 @@
 %define rsb_set_builder_args @RSB_SET_BUILDER_ARGS@
 %define rsb_work_path        @RSB_WORK_PATH@
 
-
 # Use a buildroot under this repo build path
 %define _topdir %{rsb_buildroot}
 
 
+# User supplied RPM configuration
+@USER_RPM_CONFIG@
+
+
 # Package
-%define name rtems-%{rsb_pkg_name}
 %define arch noarch
+
+%if %{undefined rpm_name}
+ %define rpm_name rtems-%{rsb_pkg_name}
+%endif
+
+%if %{undefined rpm_version}
+ %define rpm_version %{rsb_version}
+%endif
+
+%if %{undefined rpm_revision}
+ %define rpm_revision %{rsb_revision}%{?dist}
+%endif
+
+%if %{undefined rpm_summary}
+ %define rpm_summary RTEMS tools and board support package
+%endif
+
+%if %{undefined rpm_description}
+ %define rpm_description This RPM is development tools and libraries for RTEMS
+%endif
 
 
 # Package details
-Name: %{name}
-Version: %{rsb_version}
-Release: %{rsb_revision}%{?dist}
-Summary: RTEMS tools and board support package
+Name: %{rpm_name}
+Version: %{rpm_version}
+Release: %{rpm_revision}
+Summary: %{rpm_summary}
 License: GPLv2, GPLv3, BSD-2
 
 
 %description
-This RPM is development tools and BSP for RTEMS
+%{rpm_description}
 
 
 %prep

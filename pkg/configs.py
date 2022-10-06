@@ -63,6 +63,26 @@ def configure(conf):
     conf.msg('Buildset filter', bf, color='GREEN')
 
 
+def get_config_parser():
+    try:
+        import configparser
+        config = configparser.ConfigParser(strict=False, interpolation=None)
+    except:
+        # python2
+        import ConfigParser as configparser
+        config = configparser.ConfigParser(raw=True)
+    return config
+
+
+def get_config_error():
+    try:
+        import configparser
+    except:
+        # python2
+        import ConfigParser as configparser
+    return configparser.Error
+
+
 def config_path(config):
     return os.path.join(path, config + '.bset')
 
@@ -79,16 +99,6 @@ def add_wscript_fun(ctx, fun_name, fun_func):
 
 
 def configs_ini_load(bld, inis, configs):
-
-    def get_parser():
-        try:
-            import configparser
-            config = configparser.ConfigParser(strict=False)
-        except:
-            # python2
-            import ConfigParser as configparser
-            config = configparser.ConfigParser()
-        return config
 
     def parse_types(bld, value):
         vs = value.lower().strip().split(' ')
@@ -126,8 +136,11 @@ def configs_ini_load(bld, inis, configs):
         return None
 
     for ini in inis:
-        config = get_parser()
-        config.read(ini)
+        config = get_config_parser()
+        try:
+            config.read(ini)
+        except pkg.configs.get_config_error() as ce:
+            bld.fatal('configs ini parse error: ' + str(ce))
         ini_dir = os.path.dirname(os.path.abspath(ini))
         for d in config.defaults():
             i = (d, config.defaults()[d])
@@ -141,7 +154,11 @@ def configs_ini_load(bld, inis, configs):
         for section in config.sections():
             for c in configs:
                 if section == os.path.basename(c['buildset']):
-                    for i in config.items(section):
+                    try:
+                        items = config.items(section)
+                    except pkg.configs.get_config_error() as ce:
+                        bld.fatal('configs ini parse error: ' + str(ce))
+                    for i in items:
                         val = parse_types(bld, i[1])
                         if val is None:
                             bld.fatal('invalid configs item in ' + ini + ': ' +
