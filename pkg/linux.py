@@ -76,6 +76,12 @@ def rpm_config_parser(bld, build):
     except pkg.configs.get_config_error() as ce:
         bld.fatal('rpm config parse error: ' + str(ce))
     user_config = []
+    if bld.env.RPM_CONFIG_VALUES:
+        for cv in bld.env.RPM_CONFIG_VALUES:
+            ci = cv.split('=', 1)
+            if len(ci) != 2:
+                bld.fatal('invalid RPM config value: ' + cv)
+            user_config += ['%%define %s %s' % (ci[0], ci[1])]
     for ci in items:
         user_config += ['%%define %s %s' % (ci[0], ci[1])]
     return os.linesep.join(user_config)
@@ -96,6 +102,12 @@ def rpm_configure(conf):
         conf.msg('RPM config', conf.options.rpm_config)
         conf.env.RPM_CONFIG = conf.options.rpm_config
         rpm_get_config(conf)
+        if conf.options.rpm_config_value:
+            conf.env.RPM_CONFIG_VALUES = conf.options.rpm_config_value
+            conf.msg('RPM config values', len(conf.options.rpm_config_value))
+    else:
+        if conf.options.rpm_config_value:
+            conf.fatal('RPM configuration value and no INI file')
 
 
 def rpm_build(bld, build):
@@ -141,6 +153,12 @@ def options(opt):
                    default=None,
                    dest='rpm_config',
                    help='RPM configuration INI file')
+    opt.add_option('--rpm-config-value',
+                   action='append',
+                   type=str,
+                   default=None,
+                   dest='rpm_config_value',
+                   help='Set RPM configuration value (key=value)')
 
 
 def configure(conf):
