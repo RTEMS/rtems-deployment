@@ -1,0 +1,6 @@
+#
+# Gemini MVME2307
+#
+%define with_rtems_bsp powerpc/mvme2307
+%{rtems_version}/rtems-kernel
+%{rtems_version}/rtems-net-legacy
