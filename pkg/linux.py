@@ -117,6 +117,15 @@ def rpm_build(bld, build):
     spec_file = _esc_name(build['buildset'])
     spec = bld.path.get_bld().find_or_declare(spec_file + '.spec')
     buildroot = bld.path.get_bld().find_or_declare('buildroot')
+    buildroot_BUILD = buildroot.find_or_declare('BUILD')
+    buildroot_BUILDROOT = buildroot.find_or_declare('BUILDROOT')
+    buildroot_RPMS = buildroot.find_or_declare('RPMS')
+    buildroot_SRPMS = buildroot.find_or_declare('SRPMS')
+    buildroot.mkdir()
+    buildroot_BUILD.mkdir()
+    buildroot_BUILDROOT.mkdir()
+    buildroot_RPMS.mkdir()
+    buildroot_SRPMS.mkdir()
     if bld.env.RSB_RELEASED:
         rel = 'released'
     else:
