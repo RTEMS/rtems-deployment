@@ -1,11 +1,10 @@
 #
-# Gemini MVME2307, Beaknik, MVME3100
+# Gemini MVME2700, Beaknik, MVME3100
 #
 %{rtems_version}/rtems-powerpc
 #
 # Build the Net Legacy once for each BSP
 #
-gemini/gemini-net-legacy-powerpc-mvme2307
 gemini/gemini-net-legacy-powerpc-mvme2700
 #gemini/gemini-net-legacy-powerpc-beatnik
 #gemini/gemini-net-legacy-powerpc-mvme3100

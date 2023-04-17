@@ -1,10 +1,10 @@
 #
-# Gemini MVME2307, Beaknik, MVME3100
+# Gemini MVME2700, Beaknik, MVME3100
 #
 %{rtems_version}/rtems-powerpc
 #
 # Build the LibBSD once for each BSP
 #
-gemini/gemini-libbsd-powerpc-mvme2307
+gemini/gemini-libbsd-powerpc-mvme2700
 gemini/gemini-libbsd-powerpc-beatnik
 gemini/gemini-libbsd-powerpc-mvme3100
