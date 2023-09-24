@@ -6,5 +6,5 @@
 # Build the Net Legacy once for each BSP
 #
 gemini/gemini-net-legacy-powerpc-mvme2700
-#gemini/gemini-net-legacy-powerpc-beatnik
-#gemini/gemini-net-legacy-powerpc-mvme3100
+gemini/gemini-net-legacy-powerpc-beatnik
+gemini/gemini-net-legacy-powerpc-mvme3100
