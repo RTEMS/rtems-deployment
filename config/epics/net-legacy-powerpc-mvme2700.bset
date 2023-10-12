@@ -1,0 +1,7 @@
+#
+# EPICS Base PowerPC MVME2700
+#
+%define with_rtems_bsp powerpc/mvme2700
+%{rtems_version}/rtems-kernel
+%{rtems_version}/rtems-net-legacy
+net/net-services

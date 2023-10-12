@@ -1,0 +1,8 @@
+#
+# EPICS Base i386 LibBSD BSPs
+#
+%{rtems_version}/rtems-i386
+#
+# Build ibBSD once for each BSP
+#
+epics/net-libbsd-i386-pc686

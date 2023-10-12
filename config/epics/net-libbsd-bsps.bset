@@ -1,0 +1,7 @@
+#
+# EPICS Base LibBSD BSPs
+#
+# Build LibBSD once for each BSP in each architecture
+#
+epics/net-libbsd-i386-bsps
+epics/net-libbsd-powerpc-bsps

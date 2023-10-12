@@ -1,0 +1,8 @@
+#
+# EPICS Base Net Legacy BSPs
+#
+%{rtems_version}/rtems-powerpc
+epics/net-legacy-powerpc-beatnik
+epics/net-legacy-powerpc-mvme2100
+epics/net-legacy-powerpc-mvme2700
+epics/net-legacy-powerpc-mvme3100

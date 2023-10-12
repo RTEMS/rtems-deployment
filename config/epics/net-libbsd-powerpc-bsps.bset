@@ -1,0 +1,8 @@
+#
+# EPICS Base PowerPC LibBSD BSPs
+#
+%{rtems_version}/rtems-powerpc
+#
+# Build ibBSD once for each BSP
+#
+epics/net-libbsd-powerpc-mvme2700

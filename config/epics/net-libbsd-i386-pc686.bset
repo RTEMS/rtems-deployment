@@ -1,0 +1,7 @@
+#
+# EPICS i386 PC686
+#
+%define with_rtems_bsp i386/pc686
+%{rtems_version}/rtems-kernel
+%{rtems_version}/rtems-libbsd
+net/net-services
