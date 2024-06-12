@@ -205,6 +205,7 @@ def buildset(bld, build, dry_run):
         '--prefix=' + bld.env.PREFIX, '--bset-tar-file', '--trace',
         '--log=' + str(log.path_from(bld.path))
     ]
+    opts += bld.env.RSB_OPTIONS
     opts_extra = []
     if bld.env.NO_INSTALL:
         opts_extra += ['--no-install']

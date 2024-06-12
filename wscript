@@ -156,10 +156,14 @@ def options(opt):
                    default=None,
                    dest='rsb_path',
                    help='Path to the RTEMS Source Builder (RSB)')
+    opt.add_option('--rsb-options',
+                   default=None,
+                   dest='rsb_options',
+                   help='Options to pass directly to the RTEMS Source Builder (RSB)')
     opt.add_option('--prefix',
                    default='/opt/rtems/deploy',
                    dest='prefix',
-                   help='RSB prefix path to install the packages too')
+                   help='RSB prefix path to install the packages too (default: %default)')
     opt.add_option('--install',
                    action='store_true',
                    default=False,
@@ -217,8 +221,14 @@ def configure(conf):
     else:
         install = 'no-install'
     conf.msg('RSB Install mode', install, color='GREEN')
+    if conf.options.rsb_options is not None:
+        conf.msg('RSB Options', conf.options.rsb_options, color='GREEN')
+        rsb_options = conf.options.rsb_options.split()
+    else:
+        rsb_options = []
     conf.find_program('pandoc', var='PANDOC', manditory=False)
     conf.env.RSB_PATH = rsb_path
+    conf.env.RSB_OPTIONS = rsb_options
     conf.env.RSB_SET_BUILDER = rsb_set_builder
     conf.env.RSB_VERSION = rsb_version
     conf.env.RSB_REVISION = rsb_revision
