@@ -226,7 +226,7 @@ def configure(conf):
         rsb_options = conf.options.rsb_options.split()
     else:
         rsb_options = []
-    conf.find_program('pandoc', var='PANDOC', manditory=False)
+    conf.find_program('pandoc', var='PANDOC', mandatory=False)
     conf.env.RSB_PATH = rsb_path
     conf.env.RSB_OPTIONS = rsb_options
     conf.env.RSB_SET_BUILDER = rsb_set_builder
