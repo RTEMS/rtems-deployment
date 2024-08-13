@@ -1,0 +1,8 @@
+#
+# Avnet Microzed (Xilinx Zynq)
+#
+%{rtems_version}/rtems-arm
+%define with_rtems_bsp_config config/amd/avnet-microzed.ini
+%{rtems_version}/rtems-kernel
+%{rtems_version}/rtems-libbsd
+net/net-services
