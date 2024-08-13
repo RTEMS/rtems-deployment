@@ -4,5 +4,6 @@ patches
 sources
 tar
 *.txt
+.waf*
 .lock*
 __pycache__
