@@ -1,0 +1,8 @@
+#
+# Beage Bone Black
+#
+%{rtems_version}/rtems-arm
+%define with_rtems_bsp_config config/beagle/black.ini
+%{rtems_version}/rtems-kernel
+%{rtems_version}/rtems-libbsd
+net/net-services
