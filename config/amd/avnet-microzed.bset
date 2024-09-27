@@ -6,3 +6,4 @@
 %{rtems_version}/rtems-kernel
 %{rtems_version}/rtems-libbsd
 net/net-services
+devel/yaml-cpp
