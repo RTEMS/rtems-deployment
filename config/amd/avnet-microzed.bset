@@ -7,3 +7,4 @@
 %{rtems_version}/rtems-libbsd
 net/net-services
 devel/yaml-cpp
+www/civetweb
