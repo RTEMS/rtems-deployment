@@ -163,7 +163,7 @@ def options(opt):
     opt.add_option('--prefix',
                    default='/opt/rtems/deploy',
                    dest='prefix',
-                   help='RSB prefix path to install the packages too (default: %default)')
+                   help='RSB prefix path to install the packages too (default: %(default)s)')
     opt.add_option('--install',
                    action='store_true',
                    default=False,
