@@ -156,14 +156,17 @@ def options(opt):
                    default=None,
                    dest='rsb_path',
                    help='Path to the RTEMS Source Builder (RSB)')
-    opt.add_option('--rsb-options',
-                   default=None,
-                   dest='rsb_options',
-                   help='Options to pass directly to the RTEMS Source Builder (RSB)')
-    opt.add_option('--prefix',
-                   default='/opt/rtems/deploy',
-                   dest='prefix',
-                   help='RSB prefix path to install the packages too (default: %(default)s)')
+    opt.add_option(
+        '--rsb-options',
+        default=None,
+        dest='rsb_options',
+        help='Options to pass directly to the RTEMS Source Builder (RSB)')
+    opt.add_option(
+        '--prefix',
+        default='/opt/rtems/deploy',
+        dest='prefix',
+        help=
+        'RSB prefix path to install the packages too (default: %(default)s)')
     opt.add_option('--install',
                    action='store_true',
                    default=False,
@@ -192,7 +195,8 @@ def configure(conf):
             sys.path = [os.path.join(rsb_path, 'source-builder')] + sys.path
             import sb.version as rsb
         except:
-            sys.path = [os.path.join(rsb_path, 'source-builder', 'sb')] + sys.path
+            sys.path = [os.path.join(rsb_path, 'source-builder', 'sb')
+                        ] + sys.path
             import version as rsb
         if rsb is None:
             conf.fatal('cannot import RSB version')
