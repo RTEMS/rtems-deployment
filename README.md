@@ -289,8 +289,8 @@ RPM configuration values can also be supplied on the `configure`
 command line as options. For example the following command line can be
 used with the `gemini.ini` configuration:
 
-```
---rpm-config-value=gemini_version=123456
+```shell
+  --rpm-config-value=gemini_version=123456
 ```
 
 A site configuration INI file and the `configure` command line options
