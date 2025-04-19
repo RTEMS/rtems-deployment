@@ -4,5 +4,5 @@
 %{rtems_version}/rtems-arm
 %define with_rtems_bsp_config config/beagle/black.ini
 %{rtems_version}/rtems-kernel
-%{rtems_version}/rtems-libbsd
+%{rtems_version}/rtems-libbsd-fb14
 net/net-services
