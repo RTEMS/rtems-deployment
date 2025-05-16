@@ -1,5 +1,5 @@
 #
-# Beage Bone Black
+# Beagle Bone Black
 #
 %{rtems_version}/rtems-arm
 %define with_rtems_bsp_config config/beagle/black.ini
