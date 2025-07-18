@@ -43,7 +43,8 @@ if os.name == 'posix':
 
 def init(ctx):
     pkg.configs.init(ctx)
-    packager.init(ctx)
+    if packager is not None:
+        packager.init(ctx)
 
 
 def options(opt):
