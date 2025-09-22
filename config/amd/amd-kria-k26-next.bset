@@ -1,0 +1,12 @@
+#
+# AMD Kria K26 (Xilinx Ultrascale+)
+#
+# This builds the next tools for the RSB branch
+#
+next/rtems-aarch64
+%define with_rtems_bsp_config config/amd/amd-kria-k26.ini
+%{rtems_version}/rtems-kernel
+%{rtems_version}/rtems-libbsd-fb14
+net/net-services
+devel/yaml-cpp
+www/civetweb

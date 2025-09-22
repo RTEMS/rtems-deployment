@@ -1,0 +1,12 @@
+#
+# Avnet Microzed (Xilinx Zynq)
+#
+# This builds the next tools for the RSB branch
+#
+next/rtems-arm
+%define with_rtems_bsp_config config/amd/avnet-microzed.ini
+%{rtems_version}/rtems-kernel
+%{rtems_version}/rtems-libbsd-fb14
+net/net-services
+devel/yaml-cpp
+www/civetweb
