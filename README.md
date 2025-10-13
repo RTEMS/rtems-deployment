@@ -213,7 +213,7 @@ the build will use this path. Run the builds:
 ./waf
 ```
 
-Use the `--targets=` option to select a specific build.Installing
+Use the `--targets=` option to select a specific build.
 
 ### Installing
 
