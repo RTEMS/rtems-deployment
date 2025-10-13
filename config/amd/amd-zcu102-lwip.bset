@@ -1,5 +1,5 @@
 #
-# AMD Kria K26 (Xilinx Ultrascale+)
+# AMD ZCU102 (Xilinx Ultrascale+)
 #
 %{rtems_version}/rtems-aarch64
 %define with_rtems_bsp_config config/amd/amd-zcu102.ini
