@@ -30,7 +30,10 @@ Currently only RPM is supported. Happy to have more added
 # POSSIBILITY OF SUCH DAMAGE.
 #
 
+from email.utils import format_datetime
+import datetime
 import os.path
+import os
 import platform
 
 import pkg.configs
@@ -45,6 +48,13 @@ class rpmspecer(Build.BuildContext):
     fun = 'rpmspec'
 
 
+@TaskGen.feature('deb')
+class deber(Build.BuildContext):
+    '''generate Debian control files'''
+    cmd = 'deb'
+    fun = 'deb'
+
+
 def _esc_name(s):
     return s.replace('_', '-')
 
@@ -57,6 +67,10 @@ arch_map = {
     'rpmspec': {
         'x86_64': 'x86_64',
         'aarch64': 'aarch64',
+    },
+    'deb': {
+        'x86_64': 'amd64',
+        'aarch64': 'arm64',
     }
 }
 
@@ -67,7 +81,7 @@ def rpm_get_config(ctx):
         try:
             config.read(ctx.env.RPM_CONFIG)
         except pkg.configs.get_config_error() as ce:
-            conf.fatal('rpm config parse error: ' + str(ce))
+            ctx.fatal('rpm config parse error: ' + str(ce))
     else:
         config = None
     return config
@@ -98,7 +112,7 @@ def rpm_config_parser(bld, build):
 
 def rpm_configure(conf):
     try:
-        conf.find_program('rpmbuild', var='RPMBUILD', manditory=False)
+        conf.find_program('rpmbuild', var='RPMBUILD', mandatory=False)
         conf.env.PACKAGER = True
     except:
         pass
@@ -117,6 +131,74 @@ def rpm_configure(conf):
     else:
         if conf.options.rpm_config_value:
             conf.fatal('RPM configuration value and no INI file')
+
+
+def deb_get_config(ctx):
+    if ctx.env.DEB_CONFIG:
+        config = pkg.configs.get_config_parser()
+        try:
+            config.read(ctx.env.DEB_CONFIG)
+        except pkg.configs.get_config_error() as ce:
+            ctx.fatal('deb config parse error: ' + str(ce))
+    else:
+        config = None
+    return config
+
+
+def deb_config_parser(bld, build):
+    config = deb_get_config(bld)
+    no_config = ''
+    if config is None:
+        return no_config
+    if not config.has_section(build['buildset']):
+        return no_config
+    try:
+        items = config.items(build['buildset'])
+    except pkg.configs.get_config_error() as ce:
+        bld.fatal('deb config parse error: ' + str(ce))
+    user_config = []
+    if bld.env.DEB_CONFIG_VALUES:
+        for cv in bld.env.DEB_CONFIG_VALUES:
+            ci = cv.split('=', 1)
+            if len(ci) != 2:
+                bld.fatal('invalid DEB config value: ' + cv)
+            user_config += ['%define %s %s' % (ci[0], ci[1])]
+    for ci in items:
+        user_config += ['%define %s %s' % (ci[0], ci[1])]
+    return os.linesep.join(user_config)
+
+
+def deb_configure(conf):
+    try:
+        conf.find_program('dpkg-deb', var='DPKG_DEB', mandatory=False)
+        # fakeroot is commonly used for local package building
+        conf.find_program('fakeroot', var='FAKEROOT', mandatory=False)
+        conf.find_program('dh', var='DEBHELPER', mandatory=False)
+        conf.env.PACKAGER = True
+    except:
+        pass
+    if conf.options.deb_config is not None:
+        if not conf.env.PACKAGER:
+            conf.fatal('DEB config option is invalid without dpkg-deb')
+        if not os.path.isfile(conf.options.deb_config):
+            conf.fatal('DEB config does not exist or not a file: ' +
+                       conf.options.deb_config)
+        conf.msg('DEB config', conf.options.deb_config)
+        conf.env.DEB_CONFIG = conf.options.deb_config
+        deb_get_config(conf)
+        if conf.options.deb_config_value:
+            conf.env.DEB_CONFIG_VALUES = conf.options.deb_config_value
+            conf.msg('DEB config values', len(conf.options.deb_config_value))
+    else:
+        if conf.options.deb_config_value:
+            conf.fatal('DEB configuration value and no INI file')
+
+    if 'SOURCE_DATE_EPOCH' in os.environ:
+        now = datetime.datetime.fromtimestamp(
+            int(os.environ['SOURCE_DATE_EPOCH']), datetime.timezone.utc)
+    else:
+        now = datetime.datetime.now(datetime.timezone.utc)
+    conf.env.DEB_DATE = format_datetime(now)
 
 
 def rpm_build(bld, build):
@@ -158,6 +240,73 @@ def rpm_build(bld, build):
         USER_RPM_CONFIG=user_rpm_config)
 
 
+def deb_build(bld, build):
+    user_deb_config = deb_config_parser(bld, build)
+    bset = pkg.configs.buildset(bld, build, dry_run=False)
+
+    board_path = _esc_name(build['buildset'])
+    deb_dir = board_path + '.debian/debian'
+
+    buildroot = bld.path.get_bld().find_or_declare('deb_buildroot')
+    buildroot.mkdir()
+
+    if bld.env.RSB_RELEASED:
+        rel = 'released'
+    else:
+        rel = 'not-released'
+
+    # Consolidate all common substitution variables
+    subst_vars = {
+        'RSB_BUILDROOT': buildroot.abspath(),
+        'RSB_PKG_NAME': bset['name'],
+        'RSB_HOST_ARCH': arch_map["deb"][platform.machine()],
+        'PREFIX': bld.env.PREFIX,
+        'RSB_VERSION': bld.env.RSB_VERSION,
+        'RSB_REVISION': _esc_label(bld.env.RSB_REVISION),
+        'RSB_RELEASED': rel,
+        'TARFILE': bset['tar'],
+        'RSB_SET_BUILDER': bset['cmd'],
+        'RSB_SET_BUILDER_ARGS': ' '.join(bset['pkg-opts']),
+        'RSB_WORK_PATH': bld.path.abspath(),
+        'USER_DEB_CONFIG': user_deb_config,
+        'DEB_DATE': bld.env.DEB_DATE
+    }
+
+    bld(name='deb_control_' + bset['name'],
+        features='subst',
+        description='Generate Debian control file',
+        target=bld.path.get_bld().find_or_declare(deb_dir + '/control'),
+        source='pkg/debian.control.in',
+        **subst_vars)
+
+    bld(name='deb_rules_' + bset['name'],
+        features='subst',
+        description='Generate Debian rules file',
+        target=bld.path.get_bld().find_or_declare(deb_dir + '/rules'),
+        source='pkg/debian.rules.in',
+        chmod=0o755,
+        **subst_vars)
+
+    bld(name='deb_changelog_' + bset['name'],
+        features='subst',
+        description='Generate Debian changelog file',
+        target=bld.path.get_bld().find_or_declare(deb_dir + '/changelog'),
+        source='pkg/debian.changelog.in',
+        **subst_vars)
+
+    bld(name='deb_compat_' + bset['name'],
+        features='subst',
+        description='Generate Debian compat file',
+        target=bld.path.get_bld().find_or_declare(deb_dir + '/compat'),
+        source='pkg/debian.compat.in',
+        **subst_vars)
+
+
+def deb(bld):
+    for build in pkg.configs.find_buildsets(bld):
+        deb_build(bld, build)
+
+
 def rpmspec(bld):
     for build in pkg.configs.find_buildsets(bld):
         rpm_build(bld, build)
@@ -165,6 +314,7 @@ def rpmspec(bld):
 
 def init(ctx):
     pkg.configs.add_wscript_fun(ctx, 'rpmspec', rpmspec)
+    pkg.configs.add_wscript_fun(ctx, 'deb', deb)
 
 
 def options(opt):
@@ -178,10 +328,21 @@ def options(opt):
                    default=None,
                    dest='rpm_config_value',
                    help='Set RPM configuration value (key=value)')
+    opt.add_option('--deb-config',
+                   default=None,
+                   dest='deb_config',
+                   help='DEB configuration INI file')
+    opt.add_option('--deb-config-value',
+                   action='append',
+                   type=str,
+                   default=None,
+                   dest='deb_config_value',
+                   help='Set DEB configuration value (key=value)')
 
 
 def configure(conf):
     rpm_configure(conf)
+    deb_configure(conf)
 
 
 def build(bld, build, bset, dry_run):

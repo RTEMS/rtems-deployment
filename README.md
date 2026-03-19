@@ -103,7 +103,7 @@ was built.
 ### RPM
 
 An RPM package can be built. This has been tested on Rocky
-distributions. The `configure` option provdes support to customise the
+distributions. The `configure` option provides support to customise the
 RPM information to capture site specific details.
 
 ## RTEMS Source Builder
@@ -127,7 +127,7 @@ different releases of RTEMS.
 
 ## Instructions
 
-The default configuration does not install the built output. A  and to
+The default configuration does not install the built output. A and to
 create a tar file. This is the RSB deployment mode. You can optionally
 configure a prefix if you wish to install the built output or use the
 build set tar file created by the builds.
@@ -154,7 +154,7 @@ To run a test build you must first run `configure`. Valid configure options are:
    builds do not install any output. Use this option with the `--prefix` option
    if you want to use the tools directly.
 
-3. The `--rtems-version` options lets you specify the version of the
+4. The `--rtems-version` options lets you specify the version of the
    RSB to test.
 
 **Build**:
@@ -296,3 +296,87 @@ used with the `gemini.ini` configuration:
 A site configuration INI file and the `configure` command line options
 provides a simple way to integrate site information needed to
 deployment configuration control and auditing into a CI process.
+
+### Debian
+
+A Debian package can be built. The deployment package is a snapshot
+of the tools, libraries and header files needed for an RTEMS
+deployment. Similar to RPM, the package should not be viewed the same
+as packages provided by the host operating system. There is no sharing
+of common files between deployment packages.
+
+#### Prerequisites
+
+The package build requires a correctly configured Debian host with the
+required packaging tools installed. You can install all necessary
+dependencies by running:
+
+```shell
+sudo apt update
+sudo apt install build-essential debhelper devscripts dh-make
+```
+
+Generate Debian packaging files using:
+
+```shell
+./waf deb
+```
+
+This generates the Debian packaging files from templates for the
+selected deployment configuration. The generated files include:
+
+- `debian/control`
+- `debian/rules`
+- `debian/compat`
+- `debian/changelog`
+
+The generated files are placed in:
+`out/<target>/<boardname>.debian/`
+
+For example:
+`out/amd/amd-kria-k26.debian/`
+
+Change to the generated packaging directory and build the Debian
+package using the Debian package build tools:
+
+```shell
+cd out/amd/amd-kria-k26.debian
+dpkg-buildpackage -b -uc -us
+```
+
+The package build requires a correctly configured Debian host with the
+required packaging tools installed.
+
+### Package Builder Utility
+
+The `rtems-pkg` utility provides a common interface to generate and
+build deployment packages for supported package managers.
+
+The syntax is:
+
+```shell
+./rtems-pkg --packager <packager> --target <target>
+```
+
+where:
+
+- `<packager>` is the package manager to use. Supported values (as of now) are:
+
+  - `rpm`
+  - `deb`
+
+- `<target>` is the deployment configuration to build.
+
+For example:
+
+```shell
+./rtems-pkg --packager rpm --target gemini/gemini-powerpc-net-legacy-bsps
+```
+
+```shell
+./rtems-pkg --packager deb --target amd/amd-kria-k26
+```
+
+The utility automatically generates the required packaging files using
+the matching `waf` command and then invokes the host packaging tools
+to build the package.

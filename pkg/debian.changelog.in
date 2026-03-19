@@ -1,0 +1,5 @@
+rtems-@RSB_PKG_NAME@ (@RSB_VERSION@-@RSB_REVISION@) unstable; urgency=medium
+
+  * Automated package build via RTEMS Source Builder.
+
+ -- RTEMS Builder <builder@rtems.org>  @DEB_DATE@

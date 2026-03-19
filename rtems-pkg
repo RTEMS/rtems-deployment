@@ -1,0 +1,173 @@
+#!/usr/bin/env python3
+
+import argparse
+import shutil
+import subprocess
+import sys
+import os
+import logging
+from abc import ABC, abstractmethod
+
+logging.basicConfig(level=logging.INFO, format='%(message)s')
+
+
+class PackagerError(Exception):
+    pass
+
+
+class Packager(ABC):
+
+    def __init__(self, name: str):
+        self.name = name
+
+    def log(self, msg: str, level: str = "info"):
+        message = f"[{self.name.upper()}] {msg}"
+        if level == "error":
+            logging.error(message)
+        else:
+            logging.info(message)
+
+    @abstractmethod
+    def get_build_config(self, target: str) -> dict:
+        """Subclasses must return the required path, command, and working directory."""
+        pass
+
+    def check_if_packager_exists(self, cmd):
+        """Check if the required packaging tool is available in the system."""
+        tool_name = cmd[0]
+        if shutil.which(tool_name) is None:
+            self.log(f"Required tool '{tool_name}' not found in PATH.",
+                     level="error")
+            raise PackagerError(
+                f"{tool_name} is not installed or not in PATH.")
+
+    def run(self, target: str, board_name: str):
+        config = self.get_build_config(target)
+        target_path = config['path']
+        cmd = config['cmd']
+        cwd = config.get('cwd')  # Optional working directory
+
+        self.check_if_packager_exists(cmd)
+
+        if not os.path.exists(target_path):
+            self.log(f"Generated target not found: {target_path}",
+                     level="error")
+            raise FileNotFoundError(f"Missing required path: {target_path}")
+
+        self.log(f"Building package for {board_name} from {target_path}...")
+        try:
+            subprocess.run(cmd, cwd=cwd, check=True)
+            self.log(f"SUCCESS: Package built successfully for {board_name}!")
+        except subprocess.CalledProcessError as e:
+            self.log(f"ERROR: Build failed with exit code {e.returncode}",
+                     level="error")
+            raise PackagerError(f"{self.name} build failed") from e
+
+
+class DEB(Packager):
+
+    def __init__(self):
+        super().__init__("deb")
+
+    def get_build_config(self, target: str) -> dict:
+        deb_dir = os.path.join('out', f"{target}.debian")
+        return {
+            'path': deb_dir,
+            'cmd': ['dpkg-buildpackage', '-b', '-uc', '-us'],
+            'cwd': deb_dir  # dpkg needs to run inside the directory
+        }
+
+
+class RPM(Packager):
+
+    def __init__(self):
+        super().__init__("rpm")
+
+    def get_build_config(self, target: str) -> dict:
+        spec_file = os.path.join('out', f"{target}.spec")
+        return {
+            'path': spec_file,
+            'cmd': ['rpmbuild', '-bb', spec_file],
+            'cwd': None  # rpmbuild can run from anywhere
+        }
+
+
+class PackagerFactory:
+    _packagers = {
+        # format_type: (waf_feature, packager_class)
+        'deb': ["deb", DEB],
+        'rpm': ["rpmspec", RPM]
+    }
+
+    @classmethod
+    def get_packager(cls, format_type: str) -> Packager:
+        packager_class = cls._packagers.get(format_type.lower())
+        if not packager_class:
+            raise ValueError(f"Unsupported package format: {format_type}")
+        return packager_class[1]()
+
+    @classmethod
+    def get_waf_target(cls, format_type: str) -> str:
+        packager_info = cls._packagers.get(format_type.lower())
+        if not packager_info:
+            raise ValueError(f"Unsupported package format: {format_type}")
+        return packager_info[0]  # Return the Waf feature
+
+
+def main():
+    # Dynamically get available formats so we don't have to hardcode them
+    available_formats = list(PackagerFactory._packagers.keys())
+
+    parser = argparse.ArgumentParser(
+        description="RTEMS Deployment Package Builder",
+        formatter_class=argparse.RawTextHelpFormatter)
+
+    parser.add_argument(
+        '--packager',
+        choices=available_formats,  # Dynamically populates: ['deb', 'rpm']
+        required=True,
+        help="Choose the packaging format to build")
+
+    parser.add_argument(
+        '--target',
+        type=str,
+        required=True,
+        help="Specify the board target (e.g., amd/amd-kria-k26)")
+
+    args = parser.parse_args()
+    board_name = args.target.split('/')[-1]
+
+    # PHASE 1: Generate templates using Waf
+    waf_target = PackagerFactory.get_waf_target(args.packager)
+    waf_cmd = ['./waf', waf_target]
+
+    logging.info(f"--> Generating templates: {' '.join(waf_cmd)}")
+
+    try:
+        subprocess.run(waf_cmd, check=True)
+    except subprocess.CalledProcessError as e:
+        logging.error(
+            f"[ERROR] Waf template generation failed with exit code {e.returncode}."
+        )
+        sys.exit(e.returncode)
+    except FileNotFoundError:
+        logging.error(
+            f"[ERROR] Waf executable not found in the current directory.")
+        sys.exit(1)
+
+    logging.info(f"Target: {args.target} | Board: {board_name}")
+
+    # PHASE 2: Execute the actual packaging tool via the Factory
+    try:
+        packager = PackagerFactory.get_packager(args.packager)
+        packager.run(args.target, board_name)
+    except PackagerError as e:
+        logging.error(f"Packaging process aborted: {e}")
+        sys.exit(1)
+    except ValueError as e:
+        logging.error(f"Configuration error: {e}")
+        sys.exit(1)
+
+
+if __name__ == "__main__":
+    main()

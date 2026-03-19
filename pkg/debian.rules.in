@@ -1,0 +1,38 @@
+#!/usr/bin/make -f
+
+SHELL := /bin/bash
+
+FLAGS_TO_CLEAR = CFLAGS CXXFLAGS CPPFLAGS LDFLAGS ASFLAGS TRFLAGS
+$(foreach flag,$(FLAGS_TO_CLEAR),$(eval export $(flag)=))
+
+export DEB_CFLAGS_MAINT_STRIP = -Werror=format-security
+export DEB_CXXFLAGS_MAINT_STRIP = -Werror=format-security
+
+export DEB_BUILD_OPTIONS=nostrip nocompress
+
+%:
+	dh $@
+
+override_dh_auto_build:
+	cd @RSB_WORK_PATH@ && @RSB_SET_BUILDER@ @RSB_SET_BUILDER_ARGS@
+
+override_dh_auto_install:
+	mkdir -p debian/rtems-@RSB_PKG_NAME@/@PREFIX@
+	tar jxf @TARFILE@ -C debian/rtems-@RSB_PKG_NAME@
+
+override_dh_strip:
+	# Equivalent to %global _enable_debug_package 0
+
+override_dh_compress:
+	# Equivalent to %global __os_install_post /usr/lib/rpm/brp-compress %{nil}
+
+override_dh_makeshlibs:
+	# Equivalent to %global __os_install_post /usr/lib/rpm/brp-ldconfig %{nil}
+
+override_dh_shlibdeps:
+	# Disables automatic shared library dependency resolution.
+	# Crucial for cross-compiled embedded binaries so dpkg doesn't crash.
+
+override_dh_auto_clean:
+	# Equivalent to %clean
+	rm -rf debian/rtems-@RSB_PKG_NAME@
