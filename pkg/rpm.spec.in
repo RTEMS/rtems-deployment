@@ -40,6 +40,7 @@
 %define rsb_version          @RSB_VERSION@
 %define rsb_revision         @RSB_REVISION@
 %define rsb_pkg_name         @RSB_PKG_NAME@
+%define rsb_host_arch        @RSB_HOST_ARCH@
 %define rsb_prefix           @PREFIX@
 %define rsb_tarfile          @TARFILE@
 %define rsb_set_builder      @RSB_SET_BUILDER@
@@ -83,6 +84,7 @@ Name: %{rpm_name}
 Version: %{rpm_version}
 Release: %{rpm_revision}
 Summary: %{rpm_summary}
+BuildArch: %{rsb_host_arch}
 License: GPLv2, GPLv3, BSD-2
 
 

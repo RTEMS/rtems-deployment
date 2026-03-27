@@ -31,6 +31,7 @@ Currently only RPM is supported. Happy to have more added
 #
 
 import os.path
+import platform
 
 import pkg.configs
 
@@ -50,6 +51,14 @@ def _esc_name(s):
 
 def _esc_label(s):
     return s.replace('-', '_')
+
+
+arch_map = {
+    'rpmspec': {
+        'x86_64': 'x86_64',
+        'aarch64': 'aarch64',
+    }
+}
 
 
 def rpm_get_config(ctx):
@@ -137,6 +146,7 @@ def rpm_build(bld, build):
         source='pkg/rpm.spec.in',
         RSB_BUILDROOT=buildroot,
         RSB_PKG_NAME=bset['name'],
+        RSB_HOST_ARCH=arch_map["rpmspec"][platform.machine()],
         PREFIX=bld.env.PREFIX,
         RSB_VERSION=bld.env.RSB_VERSION,
         RSB_REVISION=_esc_label(bld.env.RSB_REVISION),
