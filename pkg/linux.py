@@ -75,6 +75,18 @@ arch_map = {
 }
 
 
+def get_pkg_arch(packager: str) -> str:
+    if packager not in arch_map:
+        raise ValueError(f'unsupported packager: {packager}')
+    machine = platform.machine()
+    if machine not in arch_map[packager]:
+        print(
+            f'warning: unsupported architecture {machine} for packager {packager}, using {machine} as-is'
+        )
+        return machine
+    return arch_map[packager][machine]
+
+
 def rpm_get_config(ctx):
     if ctx.env.RPM_CONFIG:
         config = pkg.configs.get_config_parser()
@@ -228,7 +240,7 @@ def rpm_build(bld, build):
         source='pkg/rpm.spec.in',
         RSB_BUILDROOT=buildroot,
         RSB_PKG_NAME=bset['name'],
-        RSB_HOST_ARCH=arch_map["rpmspec"][platform.machine()],
+        RSB_HOST_ARCH=get_pkg_arch('rpmspec'),
         PREFIX=bld.env.PREFIX,
         RSB_VERSION=bld.env.RSB_VERSION,
         RSB_REVISION=_esc_label(bld.env.RSB_REVISION),
