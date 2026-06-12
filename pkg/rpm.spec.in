@@ -33,7 +33,7 @@
 %global debug_package %{nil}
 %global __os_install_post /usr/lib/rpm/brp-ldconfig %{nil}
 %global __os_install_post /usr/lib/rpm/brp-compress %{nil}
-
+%global _auto_set_build_flags 0
 
 # Build subst, collect here
 %define rsb_buildroot        @RSB_BUILDROOT@
@@ -54,9 +54,6 @@
 # User supplied RPM configuration
 @USER_RPM_CONFIG@
 
-
-# Package
-%define arch noarch
 
 %if %{undefined rpm_name}
  %define rpm_name rtems-%{rsb_pkg_name}
@@ -97,6 +94,21 @@ License: GPLv2, GPLv3, BSD-2
 
 
 %build
+# Unset build variables set by Host OS which
+# might interfere with cross-build environment
+unset CC
+unset CXX
+unset CFLAGS
+unset CXXFLAGS
+unset CPPFLAGS
+unset LDFLAGS
+unset RPM_OPT_FLAGS
+unset FFLAGS
+unset FCFLAGS
+unset AR
+unset AS
+unset LD
+
 # The RSB deployment build command
 cd %{rsb_work_path}
 %{rsb_set_builder} %{rsb_set_builder_args}
