@@ -1,0 +1,4 @@
+RTEMS tools and board support package.
+
+This package contains development cross-compiler toolchains, compilation utilities,
+and architectural libraries optimized for RTEMS runtime deployment targets.

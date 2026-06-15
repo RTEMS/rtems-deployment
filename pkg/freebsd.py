@@ -52,18 +52,57 @@ def _esc_label(s):
 
 
 def ports_configure(conf):
-    pass
+    try:
+        conf.find_program('make', var="MAKE", madatory=False)
+        conf.find_program('cmake', var='CMAKE', madatory=False)
+        conf.env.PACKAGER = True
+    except:
+        pass
 
 
 def ports_build(bld, build):
     bset = pkg.configs.buildset(bld, build, dry_run=False)
-    pkg_name = 'pkg/' + bset['name']
-    pkg_file_name = _esc_name(build['buildset'])
-    pkg_file = bld.path.get_bld().find_or_declare(spec_file + '.spec')
+    pkg_name = bset['name']
+    buildroot = ""
+    board_path = _esc_name(build['buildset'])
+    port_dir = board_path + '.port'
+
     if bld.env.RSB_RELEASED:
         rel = 'released'
     else:
         rel = 'not-released'
+
+    subst_vars = {
+        'RSB_BUILDROOT': '',
+        'RSB_PKG_NAME': bset['name'],
+        'PREFIX': bld.env.PREFIX,
+        'RSB_VERSION': bld.env.RSB_VERSION,
+        'RSB_REVISION': _esc_label(bld.env.RSB_REVISION),
+        'RSB_RELEASED': rel,
+        'TARFILE': bset['tar'],
+        'RSB_SET_BUILDER': bset['cmd'],
+        'RSB_SET_BUILDER_ARGS': ' '.join(bset['pkg-opts']),
+        'RSB_WORK_PATH': bld.path.abspath(),
+    }
+    bld(name='port_makefile_' + bset['name'],
+        features='subst',
+        description='Generate port Makefile',
+        target=bld.path.get_bld().find_or_declare(port_dir + '/Makefile'),
+        source='pkg/freebsd.Makefile.in',
+        chmod=0o755,
+        **subst_vars)
+    bld(name='port_distinfo_' + bset['name'],
+        features='subst',
+        description='Generate port distinfo file',
+        target=bld.path.get_bld().find_or_declare(port_dir + '/distinfo'),
+        source='pkg/freebsd.distinfo.in',
+        **subst_vars)
+    bld(name='port_pkg-descr_' + bset['name'],
+        features='subst',
+        description='Generate port pkg-descr file',
+        target=bld.path.get_bld().find_or_declare(port_dir + '/pkg-descr'),
+        source='pkg/freebsd.pkg-descr.in',
+        **subst_vars)
 
 
 def ports(bld):

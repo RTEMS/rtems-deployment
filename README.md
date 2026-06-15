@@ -347,6 +347,43 @@ dpkg-buildpackage -b -uc -us
 The package build requires a correctly configured Debian host with the
 required packaging tools installed.
 
+### FreeBSD
+
+A FreeBSD package can be built, similar to RPM and DEB.
+
+#### Prerequisites
+
+The package build requires a correctly configured FreeBSD host with the
+required packages tools installed. You can install all necessary
+dependencies by running:
+
+```shell
+doas pkg install gmake binutils cmake
+```
+
+Generate FreeBSD's ports packaging files using:
+
+```shell
+./waf ports
+```
+
+This generates the FreeBSD Ports files from templates for the
+selected deployment configuration. The generated files include:
+
+- `Makefile`
+- `pkg-descr`
+- `pkg-distinfo`
+
+The generated files are place in:
+`out/<target>/<boardname>.port`
+
+Change to the generated ports directory and build the package
+using make:
+
+```shell
+make package
+```
+
 ### Package Builder Utility
 
 The `rtems-pkg` utility provides a common interface to generate and
@@ -364,6 +401,7 @@ where:
 
   - `rpm`
   - `deb`
+  - `ports`
 
 - `<target>` is the deployment configuration to build.
 
@@ -375,6 +413,10 @@ For example:
 
 ```shell
 ./rtems-pkg --packager deb --target amd/amd-kria-k26
+```
+
+```shell
+./rtems-pkg --packager ports --target amd/amd-kria-k26-next
 ```
 
 The utility automatically generates the required packaging files using

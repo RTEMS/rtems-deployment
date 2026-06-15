@@ -1,0 +1,46 @@
+# SPDX-License-Identifier: BSD-2-Clause
+#
+# RTEMS Deployment FreeBSD Port Makefile template
+#
+
+PORTNAME=	rtems-@RSB_PKG_NAME@
+DISTVERSION=	@RSB_VERSION@
+CATEGORIES=	devel
+
+MAINTAINER=	builder@rtems.org
+COMMENT=	RTEMS tools and board support package
+WWW=		https://www.rtems.org
+
+LICENSE=	BSD2CLAUSE
+
+PREFIX= @PREFIX@
+RSB_BUILDROOT=	@RSB_BUILDROOT@
+RSB_WORK_PATH=	@RSB_WORK_PATH@
+RSB_SET_BUILDER= @RSB_SET_BUILDER@
+RSB_SET_BUILDER_ARGS= @RSB_SET_BUILDER_ARGS@
+RSB_PREFIX= @PREFIX@
+RSB_TARFILE= @TARFILE@
+# HOST_ARCH is handled by ports infrastructure
+DISTFILES=
+NO_MANCOMPRESS= yes
+NO_WRKSUBDIR= yes
+
+do-fetch:
+	@${DO_NADA}
+
+do-build:
+	(cd ${RSB_WORK_PATH} && env -i PATH="${PATH}" HOME="${HOME}" \
+		${RSB_SET_BUILDER} ${RSB_SET_BUILDER_ARGS})
+
+compress-man:
+	@${DO_NADA}
+
+do-install:
+	${MKDIR} ${STAGEDIR}${PREFIX}
+	tar jxf ${RSB_TARFILE} -C ${STAGEDIR}${PREFIX} --strip-components=3
+
+post-install:
+	@cd ${STAGEDIR}${PREFIX} && ${FIND} . \( -type f -o -type l \) | ${SED} 's|^\./||' >> ${TMPPLIST}
+
+
+.include <bsd.port.mk>

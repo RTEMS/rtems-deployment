@@ -92,11 +92,26 @@ class RPM(Packager):
         }
 
 
+class PORTS(Packager):
+
+    def __init__(self):
+        super().__init__("ports")
+
+    def get_build_config(self, target: str) -> dict:
+        port_path = os.path.join('out', f"{target}.port")
+        return {
+            'path': port_path,
+            'cmd': ['make', 'package'],
+            'cwd': port_path
+        }
+
+
 class PackagerFactory:
     _packagers = {
         # format_type: (waf_feature, packager_class)
         'deb': ["deb", DEB],
-        'rpm': ["rpmspec", RPM]
+        'rpm': ["rpmspec", RPM],
+        'ports': ["ports", PORTS]
     }
 
     @classmethod
